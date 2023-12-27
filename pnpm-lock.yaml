@@ -23,15 +23,15 @@ devDependencies:
   bson-objectid:
     specifier: ^2.0.4
     version: 2.0.4
-  franc:
-    specifier: ^6.1.0
-    version: 6.1.0
   mathml-to-latex:
     specifier: ^1.3.0
     version: 1.3.0
   node-html-parser:
     specifier: ^6.1.11
     version: 6.1.11
+  paperlib-api:
+    specifier: 0.0.3
+    version: 0.0.3
   prettier:
     specifier: ^3.1.1
     version: 3.1.1
@@ -439,10 +439,6 @@ packages:
     resolution: {integrity: sha512-BrgHpW9NURQgzoNyjfq0Wu6VFO6D7IZEmJNdtgNqpzGG8RuNFHt2jQxWlAs4HMe119chBnv+34syEZtc6IhLtA==}
     dev: true
 
-  /collapse-white-space@2.1.0:
-    resolution: {integrity: sha512-loKTxY1zCOuG4j9f6EPnuyyYkf58RnhhWTvRoZEokgB+WbdXehfjFviyOVYkqzEWz1Q5kRiZdBYS5SwxbQYwzw==}
-    dev: true
-
   /commondir@1.0.1:
     resolution: {integrity: sha512-W9pAhw0ja1Edb5GVdIF1mjZw/ASI0AlShXM83UUGe2DVr5TdAPEA1OA8m/g8zWp9x6On7gqufY+FatDbC3MDQg==}
     dev: true
@@ -769,12 +765,6 @@ packages:
       - encoding
     dev: true
 
-  /franc@6.1.0:
-    resolution: {integrity: sha512-woYqLX7sFcrKD4y1M33IorhH4b21bCDNr0Rm+zlAGRNuxLFilT4h8qEcclu8RFLpHmvNz7FgAYl9Vqfa8UZwoA==}
-    dependencies:
-      trigram-utils: 2.0.1
-    dev: true
-
   /fs.realpath@1.0.0:
     resolution: {integrity: sha512-OO0pH2lK6a0hZnAdau5ItzHPI6pUlvI7jMVnxUQRtw4owF2wk8lOSabtGDCTP4Ggrg2MbGnWO9X8K1t4+fGMDw==}
     dev: true
@@ -907,10 +897,6 @@ packages:
     resolution: {integrity: sha512-sGkPx+VjMtmA6MX27oA4FBFELFCZZ4S4XqeGOXCv68tT+jb3vk/RyaKWP0PTKyWtmLSM0b+adUTEvbs1PEaH2w==}
     dev: true
 
-  /n-gram@2.0.2:
-    resolution: {integrity: sha512-S24aGsn+HLBxUGVAUFOwGpKs7LBcG4RudKU//eWzt/mQ97/NMKQxDWHyHx63UNWk/OOdihgmzoETn1tf5nQDzQ==}
-    dev: true
-
   /nanoid@3.3.6:
     resolution: {integrity: sha512-BGcqMMJuToF7i1rt+2PWSNVnWIkGCU78jBG3RxO/bZlnZPK2Cmi2QaffxGO/2RvWi9sL+FAiRiXMgsyxQ1DIDA==}
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
@@ -965,6 +951,11 @@ packages:
     hasBin: true
     dependencies:
       glob: 7.2.3
+    dev: true
+
+  /paperlib-api@0.0.3:
+    resolution: {integrity: sha512-sHjwnCG+zAZdCpX28SzrSCgAhHslgCf3y7GLSus6hHqxAebrOvZ2KhHjo0WEI0eaxBZqrIGkctadb4dIeoEC0Q==}
+    engines: {node: '>=16.17.1'}
     dev: true
 
   /path-is-absolute@1.0.1:
@@ -1136,13 +1127,6 @@ packages:
 
   /tr46@0.0.3:
     resolution: {integrity: sha512-N3WMsuqV66lT30CrXNbEjx4GEwlow3v6rr4mCcv6prnfwhS01rkgyFdjPNBYd9br7LpXV1+Emh01fHnq2Gdgrw==}
-    dev: true
-
-  /trigram-utils@2.0.1:
-    resolution: {integrity: sha512-nfWIXHEaB+HdyslAfMxSqWKDdmqY9I32jS7GnqpdWQnLH89r6A5sdk3fDVYqGAZ0CrT8ovAFSAo6HRiWcWNIGQ==}
-    dependencies:
-      collapse-white-space: 2.1.0
-      n-gram: 2.0.2
     dev: true
 
   /type-detect@4.0.8:

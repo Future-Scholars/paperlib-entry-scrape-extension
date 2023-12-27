@@ -1,6 +1,4 @@
-import { PLAPI } from "paperlib";
-
-import { PaperEntity } from "@/models/paper-entity";
+import { PLAPI, PaperEntity } from "paperlib-api";
 
 import { AbstractEntryScraper } from "./entry-scraper";
 import { PDFEntryScraper } from "./pdf-entry-scraper";
@@ -14,7 +12,7 @@ export interface IWebcontentPDFURLEntryScraperPayload {
   };
 }
 
-export class WebcontentPDFURLEntryImporter extends AbstractEntryScraper {
+export class WebcontentPDFURLEntryScraper extends AbstractEntryScraper {
   static validPayload(payload: any) {
     if (
       !payload.hasOwnProperty("type") ||
@@ -29,7 +27,7 @@ export class WebcontentPDFURLEntryImporter extends AbstractEntryScraper {
   }
 
   static async scrape(
-    payload: IWebcontentPDFURLEntryScraperPayload
+    payload: IWebcontentPDFURLEntryScraperPayload,
   ): Promise<PaperEntity[]> {
     if (!this.validPayload(payload)) {
       return [];

@@ -1,8 +1,5 @@
 import fs from "fs";
-import { PLAPI } from "paperlib";
-
-import { PaperEntity } from "@/models/paper-entity";
-import { eraseProtocol, getFileType, getProtocol } from "@/utils/url";
+import { PLAPI, PaperEntity, urlUtils } from "paperlib-api";
 
 import { AbstractEntryScraper } from "./entry-scraper";
 import pdfworker from "./pdfworker/worker";
@@ -44,9 +41,9 @@ export class PDFEntryScraper extends AbstractEntryScraper {
       return false;
     }
     if (
-      (getProtocol(payload.value) === "file" ||
-        getProtocol(payload.value) === "") &&
-      getFileType(payload.value) === "pdf"
+      (urlUtils.getProtocol(payload.value) === "file" ||
+        urlUtils.getProtocol(payload.value) === "") &&
+      urlUtils.getFileType(payload.value) === "pdf"
     ) {
       return true;
     } else {
@@ -54,20 +51,20 @@ export class PDFEntryScraper extends AbstractEntryScraper {
     }
   }
   static async scrape(
-    payload: IPDFEntryScraperPayload
+    payload: IPDFEntryScraperPayload,
   ): Promise<PaperEntity[]> {
     if (!this.validPayload(payload)) {
       return [];
     }
 
-    const paperEntityDraft = new PaperEntity(true);
+    const paperEntityDraft = new PaperEntity({}, true);
 
-    let buf = fs.readFileSync(eraseProtocol(payload.value));
+    let buf = fs.readFileSync(urlUtils.eraseProtocol(payload.value));
     let zoteroData = await pdfworker.getRecognizerData(
       buf,
       "",
       cmapProvider,
-      standardFontProvider
+      standardFontProvider,
     );
     zoteroData.fileName = payload.value.split("/").pop();
 
@@ -86,7 +83,7 @@ export class PDFEntryScraper extends AbstractEntryScraper {
       zoteroData,
       headers,
       0,
-      5000
+      5000,
       // dataStr.length > 1000000
     );
 
@@ -99,7 +96,7 @@ export class PDFEntryScraper extends AbstractEntryScraper {
       const authors = zoteroMetadata.authors.map(
         (author: { firstName: string; lastName: string }) => {
           return `${author.firstName} ${author.lastName}`;
-        }
+        },
       );
       paperEntityDraft.setValue("authors", authors.join(", "));
     }

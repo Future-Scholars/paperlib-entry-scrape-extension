@@ -1,4 +1,4 @@
-import { PaperEntity } from "@/models/paper-entity";
+import { PaperEntity } from "paperlib-api";
 
 export abstract class AbstractEntryScraper {
   static validPayload: (payload: any) => boolean;

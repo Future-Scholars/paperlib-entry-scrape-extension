@@ -1,7 +1,6 @@
 import { Cite, plugins } from "@citation-js/core";
 import * as plugin from "@citation-js/plugin-bibtex";
-
-import { PaperEntity } from "@/models/paper-entity";
+import { PaperEntity } from "paperlib-api";
 
 interface BibtexEntity {
   title: string;
@@ -30,7 +29,7 @@ export function bibtex2json(bibtex: string): BibtexEntity[] {
 
 export function bibtex2paperEntityDraft(
   bibtex: BibtexEntity,
-  paperEntityDraft: PaperEntity
+  paperEntityDraft: PaperEntity,
 ): PaperEntity {
   if (bibtex.title) {
     paperEntityDraft.title = bibtex.title;
@@ -90,7 +89,7 @@ export function bibtex2paperEntityDraft(
 
 export function bibtexes2paperEntityDrafts(
   bibtexes: BibtexEntity[],
-  paperEntityDrafts: PaperEntity[]
+  paperEntityDrafts: PaperEntity[],
 ): PaperEntity | PaperEntity[] {
   try {
     // Assert bibtex and paperEntityDraft are both arrays or not

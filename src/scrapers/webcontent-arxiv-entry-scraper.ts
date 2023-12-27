@@ -1,6 +1,4 @@
-import { PLAPI } from "paperlib";
-
-import { PaperEntity } from "@/models/paper-entity";
+import { PLAPI, PaperEntity } from "paperlib-api";
 
 import { AbstractEntryScraper } from "./entry-scraper";
 import { PDFEntryScraper } from "./pdf-entry-scraper";
@@ -14,7 +12,7 @@ export interface IWebcontentArXivEntryScraperPayload {
   };
 }
 
-export class WebcontentArXivEntryImporter extends AbstractEntryScraper {
+export class WebcontentArXivEntryScraper extends AbstractEntryScraper {
   static validPayload(payload: any) {
     if (
       !payload.hasOwnProperty("type") ||
@@ -25,14 +23,14 @@ export class WebcontentArXivEntryImporter extends AbstractEntryScraper {
       return false;
     }
     const urlRegExp = new RegExp(
-      "^https?://([^\\.]+\\.)?(arxiv\\.org|xxx\\.lanl\\.gov)/(/\\w|abs/|pdf/)"
+      "^https?://([^\\.]+\\.)?(arxiv\\.org|xxx\\.lanl\\.gov)/(/\\w|abs/|pdf/)",
     );
     // TODO: check all keyname of payload, some is url.
     return urlRegExp.test(payload.value.url);
   }
 
   static async scrape(
-    payload: IWebcontentArXivEntryScraperPayload
+    payload: IWebcontentArXivEntryScraperPayload,
   ): Promise<PaperEntity[]> {
     if (!this.validPayload(payload)) {
       return [];

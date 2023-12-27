@@ -1,28 +1,28 @@
-import { PaperEntity } from "@/models/paper-entity";
+import { PaperEntity } from "paperlib-api";
+
 import { BibTexEntryScraper } from "@/scrapers/bibtex-entry-scraper";
 import { AbstractEntryScraper } from "@/scrapers/entry-scraper";
 import { PaperEntityEntryScraper } from "@/scrapers/paperentity-entry-scraper";
 import { PDFEntryScraper } from "@/scrapers/pdf-entry-scraper";
-import { WebcontentCNKIEntryImporter } from "@/scrapers/webcontent-cnki-entry-scraper";
-import { WebcontentEmbedEntryImporter } from "../scrapers/webcontent-embed-entry-scraper";
-import { WebcontentGoogleScholarEntryImporter } from "../scrapers/webcontent-googlescholar-entry-scraper";
-import { WebcontentIEEEEntryImporter } from "../scrapers/webcontent-ieee-entry-scraper";
-import { WebcontentPDFURLEntryImporter } from "../scrapers/webcontent-pdfurl-entry-scraper";
+import { WebcontentArXivEntryScraper } from "@/scrapers/webcontent-arxiv-entry-scraper";
+import { WebcontentCNKIEntryScraper } from "@/scrapers/webcontent-cnki-entry-scraper";
+import { WebcontentEmbedEntryScraper } from "@/scrapers/webcontent-embed-entry-scraper";
+import { WebcontentGoogleScholarEntryScraper } from "@/scrapers/webcontent-googlescholar-entry-scraper";
+import { WebcontentIEEEEntryScraper } from "@/scrapers/webcontent-ieee-entry-scraper";
+import { WebcontentPDFURLEntryScraper } from "@/scrapers/webcontent-pdfurl-entry-scraper";
 import { ZoteroCSVEntryScraper } from "@/scrapers/zoterocsv-entry-scraper";
-
-import { WebcontentArXivEntryImporter } from "../scrapers/webcontent-arxiv-entry-scraper";
 
 const SCRAPER_OBJS = new Map<string, typeof AbstractEntryScraper>([
   ["pdf", PDFEntryScraper],
   ["bibtex", BibTexEntryScraper],
   ["paperentity", PaperEntityEntryScraper],
   ["zoterocsv", ZoteroCSVEntryScraper],
-  ["webcontent-arxiv", WebcontentArXivEntryImporter],
-  ["webcontent-googlescholar", WebcontentGoogleScholarEntryImporter],
-  ["webcontent-ieee", WebcontentIEEEEntryImporter],
-  ["webcontent-cnki", WebcontentCNKIEntryImporter],
-  ["webcontent-pdfurl", WebcontentPDFURLEntryImporter],
-  ["webcontent-embed", WebcontentEmbedEntryImporter],
+  ["webcontent-arxiv", WebcontentArXivEntryScraper],
+  ["webcontent-googlescholar", WebcontentGoogleScholarEntryScraper],
+  ["webcontent-ieee", WebcontentIEEEEntryScraper],
+  ["webcontent-cnki", WebcontentCNKIEntryScraper],
+  ["webcontent-pdfurl", WebcontentPDFURLEntryScraper],
+  ["webcontent-embed", WebcontentEmbedEntryScraper],
 ]);
 
 /**
@@ -38,10 +38,10 @@ export class EntryScrapeService {
         const paperEntityDrafts = await Promise.all(
           Array.from(SCRAPER_OBJS.values()).map(async (Scraper) => {
             return await Scraper.scrape(payload);
-          })
+          }),
         );
         return paperEntityDrafts.flat();
-      })
+      }),
     );
     return paperEntityDrafts.flat();
   }

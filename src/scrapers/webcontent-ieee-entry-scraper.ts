@@ -1,8 +1,6 @@
 import parse from "node-html-parser";
-import { PLAPI } from "paperlib";
+import { PLAPI, PaperEntity } from "paperlib-api";
 import { CookieJar } from "tough-cookie";
-
-import { PaperEntity } from "@/models/paper-entity";
 
 import { AbstractEntryScraper } from "./entry-scraper";
 
@@ -15,7 +13,7 @@ export interface IWebcontentIEEEEntryScraperPayload {
   };
 }
 
-export class WebcontentIEEEEntryImporter extends AbstractEntryScraper {
+export class WebcontentIEEEEntryScraper extends AbstractEntryScraper {
   // TODO: test this one
   static validPayload(payload: any) {
     if (
@@ -33,7 +31,7 @@ export class WebcontentIEEEEntryImporter extends AbstractEntryScraper {
   }
 
   static async scrape(
-    payload: IWebcontentIEEEEntryScraperPayload
+    payload: IWebcontentIEEEEntryScraperPayload,
   ): Promise<PaperEntity[]> {
     if (!this.validPayload(payload)) {
       return [];
@@ -44,10 +42,10 @@ export class WebcontentIEEEEntryImporter extends AbstractEntryScraper {
     const root = parse(payload.value.document);
     const metaNodes = root.querySelectorAll("script");
     const meta = metaNodes.find((node) =>
-      node.rawText.includes("xplGlobal.document.metadata")
+      node.rawText.includes("xplGlobal.document.metadata"),
     );
     if (meta) {
-      const entityDraft = new PaperEntity(true);
+      const entityDraft = new PaperEntity({}, true);
       const metaStr = meta.rawText;
 
       const title = metaStr.match(/"title":"(.*?)",/);
@@ -64,7 +62,7 @@ export class WebcontentIEEEEntryImporter extends AbstractEntryScraper {
       }
       const publicationYear = metaStr.match(/"publicationYear":"(.*?)",/);
       if (publicationYear) {
-        entityDraft.publicationYear = publicationYear[1];
+        entityDraft.pubTime = publicationYear[1];
       }
 
       const firstNames = metaStr.matchAll(/"firstName":"(.*?)",/g);
@@ -88,7 +86,7 @@ export class WebcontentIEEEEntryImporter extends AbstractEntryScraper {
       if (pdfPath && pdfAccessNode) {
         const url = `https://ieeexplore.ieee.org${pdfPath[1].replace(
           "iel7",
-          "ielx7"
+          "ielx7",
         )}`;
         for (const cookie of payload.value.cookies) {
           if (cookie) {
@@ -96,7 +94,7 @@ export class WebcontentIEEEEntryImporter extends AbstractEntryScraper {
               // @ts-ignore
               `${cookie.name}=${cookie.value}; domain=${cookie.domain}`,
               // @ts-ignore
-              `https://${cookie.domain}/`
+              `https://${cookie.domain}/`,
             );
           }
         }
@@ -108,7 +106,7 @@ export class WebcontentIEEEEntryImporter extends AbstractEntryScraper {
 
           const targetUrl = await PLAPI.networkTool.downloadPDFs(
             [url],
-            cookieJar
+            cookieJar,
           );
           if (targetUrl.length > 0) {
             entityDraft.mainURL = targetUrl[0];

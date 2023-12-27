@@ -1,4 +1,4 @@
-import { PaperEntity } from "@/models/paper-entity";
+import { PaperEntity } from "paperlib-api";
 
 import { AbstractEntryScraper } from "./entry-scraper";
 
@@ -32,7 +32,7 @@ export class PaperEntityEntryScraper extends AbstractEntryScraper {
       return [];
     }
 
-    const paperEntityDraft = new PaperEntity(false);
+    const paperEntityDraft = new PaperEntity({}, false);
 
     for (const p of Object.keys(payload.value)) {
       paperEntityDraft[p] = payload.value[p];

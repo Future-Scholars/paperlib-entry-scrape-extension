@@ -1,7 +1,5 @@
 import { readFileSync } from "fs";
-import { PLAPI } from "paperlib";
-
-import { PaperEntity } from "@/models/paper-entity";
+import { PLAPI, PaperEntity } from "paperlib-api";
 
 import { AbstractEntryScraper } from "./entry-scraper";
 
@@ -14,7 +12,7 @@ export interface IWebcontentEmbedEntryScraperPayload {
   };
 }
 
-export class WebcontentEmbedEntryImporter extends AbstractEntryScraper {
+export class WebcontentEmbedEntryScraper extends AbstractEntryScraper {
   static validPayload(payload: any) {
     if (
       !payload.hasOwnProperty("type") ||
@@ -53,7 +51,7 @@ export class WebcontentEmbedEntryImporter extends AbstractEntryScraper {
   }
 
   static async scrape(
-    payload: IWebcontentEmbedEntryScraperPayload
+    payload: IWebcontentEmbedEntryScraperPayload,
   ): Promise<PaperEntity[]> {
     if (!this.validPayload(payload)) {
       return [];
@@ -65,26 +63,30 @@ export class WebcontentEmbedEntryImporter extends AbstractEntryScraper {
     // Get meta tags
     const metaTags = el.getElementsByTagName("meta");
     if (metaTags.length > 0) {
-      const entityDraft = new PaperEntity(true);
+      const entityDraft = new PaperEntity({}, true);
       let matched = false;
 
       const authors: string[] = [];
 
       for (const meta of metaTags) {
-        if (meta.name === "citation_title") {
-          entityDraft.setValue("title", meta.content);
+        if (meta.name === "citation_title" || meta.name === "dc.Title") {
+          entityDraft.title = meta.content;
           matched = true;
         }
-        if (meta.name === "citation_author") {
+        if (meta.name === "citation_author" || meta.name === "dc.Creator") {
           authors.push(meta.content);
         }
-        if (meta.name === "citation_publication_date") {
-          entityDraft.setValue("pubTime", meta.content.split("/")[0]);
+        if (
+          meta.name === "citation_publication_date" ||
+          meta.name == "dc.Date"
+        ) {
+          entityDraft.pubTime = meta.content.split("/")[0];
         }
-        if (meta.name === "citation_doi") {
-          entityDraft.setValue("doi", meta.content);
+        if (meta.name === "citation_doi" || meta.name === "dc.Identifier") {
+          entityDraft.doi = meta.content;
         }
-        if (meta.name === "citation_pdf_url") {
+        // TODO: check this one.
+        if (meta.name === "citation_pdf_url" || meta.name === "dc.Identifier") {
           let downloadURL: string;
           if (payload.value.url.includes("adsabs.harvard.edu")) {
             downloadURL = `https://ui.adsabs.harvard.edu${meta.content}`;
@@ -105,20 +107,17 @@ export class WebcontentEmbedEntryImporter extends AbstractEntryScraper {
               fileContent.subarray(0, 5).toString() === "%PDF-" &&
               fileContent.subarray(-5).toString().includes("EOF")
             ) {
-              entityDraft.setValue("mainURL", downloadedFilePath[0]);
+              entityDraft.mainURL = downloadedFilePath[0];
             }
           }
         }
       }
       if (authors.length > 0) {
-        entityDraft.setValue(
-          "authors",
-          authors
-            .map((author) => {
-              return author.trim();
-            })
-            .join(", ")
-        );
+        entityDraft.authors = authors
+          .map((author) => {
+            return author.trim();
+          })
+          .join(", ");
       }
       if (!matched) {
         return [];

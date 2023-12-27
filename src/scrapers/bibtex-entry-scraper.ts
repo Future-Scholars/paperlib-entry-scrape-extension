@@ -1,8 +1,7 @@
 import { readFileSync } from "fs";
 
-import { PaperEntity } from "@/models/paper-entity";
 import { bibtex2json, bibtex2paperEntityDraft } from "@/utils/bibtex";
-import { eraseProtocol, getFileType, getProtocol } from "@/utils/url";
+import { PaperEntity, urlUtils } from "paperlib-api";
 
 import { AbstractEntryScraper } from "./entry-scraper";
 
@@ -21,9 +20,9 @@ export class BibTexEntryScraper extends AbstractEntryScraper {
       return false;
     }
     if (
-      (getProtocol(payload.value) === "file" ||
-        getProtocol(payload.value) === "") &&
-      getFileType(payload.value) === "bib"
+      (urlUtils.getProtocol(payload.value) === "file" ||
+        urlUtils.getProtocol(payload.value) === "") &&
+      urlUtils.getFileType(payload.value) === "bib"
     ) {
       return true;
     } else {
@@ -31,17 +30,20 @@ export class BibTexEntryScraper extends AbstractEntryScraper {
     }
   }
   static async scrape(
-    payload: IBibTexEntryScraperPayload
+    payload: IBibTexEntryScraperPayload,
   ): Promise<PaperEntity[]> {
     if (!this.validPayload(payload)) {
       return [];
     }
 
-    const bibtexStr = readFileSync(eraseProtocol(payload.value), "utf8");
+    const bibtexStr = readFileSync(
+      urlUtils.eraseProtocol(payload.value),
+      "utf8",
+    );
     const bibtexes = bibtex2json(bibtexStr);
     const paperEntityDrafts: PaperEntity[] = [];
     for (const bibtex of bibtexes) {
-      let paperEntityDraft = new PaperEntity(true);
+      let paperEntityDraft = new PaperEntity({}, true);
       paperEntityDraft = bibtex2paperEntityDraft(bibtex, paperEntityDraft);
       paperEntityDrafts.push(paperEntityDraft);
     }

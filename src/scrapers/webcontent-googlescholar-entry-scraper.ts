@@ -1,7 +1,6 @@
 import parse from "node-html-parser";
-import { PLAPI } from "paperlib";
+import { PLAPI, PaperEntity } from "paperlib-api";
 
-import { PaperEntity } from "@/models/paper-entity";
 import { bibtex2json, bibtex2paperEntityDraft } from "@/utils/bibtex";
 
 import { AbstractEntryScraper } from "./entry-scraper";
@@ -15,7 +14,7 @@ export interface IWebcontentGoogleScholarEntryScraperPayload {
   };
 }
 
-export class WebcontentGoogleScholarEntryImporter extends AbstractEntryScraper {
+export class WebcontentGoogleScholarEntryScraper extends AbstractEntryScraper {
   static validPayload(payload: any) {
     if (
       !payload.hasOwnProperty("type") ||
@@ -32,7 +31,7 @@ export class WebcontentGoogleScholarEntryImporter extends AbstractEntryScraper {
   }
 
   static async scrape(
-    payload: IWebcontentGoogleScholarEntryScraperPayload
+    payload: IWebcontentGoogleScholarEntryScraperPayload,
   ): Promise<PaperEntity[]> {
     if (!this.validPayload(payload)) {
       return [];
@@ -41,7 +40,7 @@ export class WebcontentGoogleScholarEntryImporter extends AbstractEntryScraper {
     const paper = parse(payload.value.document);
 
     if (paper) {
-      let entityDraft = new PaperEntity(true);
+      let entityDraft = new PaperEntity({}, true);
       const fileUrlNode = paper.querySelector(".gs_or_ggsm")?.firstChild;
       // @ts-ignore
       const downloadURL = fileUrlNode?.attributes["href"];
@@ -70,9 +69,9 @@ export class WebcontentGoogleScholarEntryImporter extends AbstractEntryScraper {
           };
           const scrapeUrl = `https://scholar.google.com/scholar?q=${titleStr.replaceAll(
             " ",
-            "+"
+            "+",
           )}`;
-          await PLAPI.networkTool.get(scrapeUrl, headers, 0, true);
+          await PLAPI.networkTool.get(scrapeUrl, headers, 0);
 
           const dataid = title.parentNode.parentNode.attributes["data-aid"];
           if (dataid) {
@@ -81,7 +80,6 @@ export class WebcontentGoogleScholarEntryImporter extends AbstractEntryScraper {
               citeUrl,
               headers,
               0,
-              true
             );
             if (citeResponse?.body) {
               const citeRoot = parse(citeResponse?.body);
@@ -95,7 +93,6 @@ export class WebcontentGoogleScholarEntryImporter extends AbstractEntryScraper {
                     citeBibtexUrl,
                     headers,
                     0,
-                    true
                   );
                   const bibtexStr = citeBibtexResponse?.body;
                   if (bibtexStr) {

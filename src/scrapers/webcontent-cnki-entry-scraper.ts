@@ -1,6 +1,5 @@
 import parse from "node-html-parser";
-import { PLAPI } from "paperlib";
-import { PaperEntity } from "@/models/paper-entity";
+import { PLAPI, PaperEntity } from "paperlib-api";
 
 import { AbstractEntryScraper } from "./entry-scraper";
 
@@ -13,7 +12,7 @@ export interface IWebcontentCNKIEntryScraperPayload {
   };
 }
 
-export class WebcontentCNKIEntryImporter extends AbstractEntryScraper {
+export class WebcontentCNKIEntryScraper extends AbstractEntryScraper {
   static validPayload(payload: any) {
     if (
       !payload.hasOwnProperty("type") ||
@@ -28,7 +27,7 @@ export class WebcontentCNKIEntryImporter extends AbstractEntryScraper {
   }
 
   static async scrape(
-    payload: IWebcontentCNKIEntryScraperPayload
+    payload: IWebcontentCNKIEntryScraperPayload,
   ): Promise<PaperEntity[]> {
     if (!this.validPayload(payload)) {
       return [];
@@ -41,11 +40,16 @@ export class WebcontentCNKIEntryImporter extends AbstractEntryScraper {
     const dbname = urlParams.get("dbname") || "";
 
     const refRequestUrl = "https://kns.cnki.net/kns8/manage/ShowExport";
-    const refRequestFormData = {"filename": filename, "dbname": dbname, "displaymode": "Refworks", "ordertype": "desc"};
+    const refRequestFormData = {
+      filename: filename,
+      dbname: dbname,
+      displaymode: "Refworks",
+      ordertype: "desc",
+    };
 
     const response = await PLAPI.networkTool.postForm(
       refRequestUrl,
-      refRequestFormData as any
+      refRequestFormData as any,
     );
 
     const root = parse(response.body);
@@ -56,7 +60,7 @@ export class WebcontentCNKIEntryImporter extends AbstractEntryScraper {
       if (lines.length === 0) {
         return [];
       } else {
-        const paperEntityDraft = new PaperEntity(true);
+        const paperEntityDraft = new PaperEntity({}, true);
 
         const authorList: string[] = [];
 
@@ -67,11 +71,11 @@ export class WebcontentCNKIEntryImporter extends AbstractEntryScraper {
 
         for (const line of lines) {
           if (line.startsWith("T1")) {
-            paperEntityDraft.setValue("title", line.slice(3));
+            paperEntityDraft.title = line.slice(3);
           } else if (
             line.startsWith("A1") ||
             line.startsWith(
-              "A2" || line.startsWith("A3") || line.startsWith("A4")
+              "A2" || line.startsWith("A3") || line.startsWith("A4"),
             )
           ) {
             const aList = line
@@ -80,11 +84,11 @@ export class WebcontentCNKIEntryImporter extends AbstractEntryScraper {
               .map((author) => author.trim());
             authorList.push(...aList);
           } else if (line.startsWith("YR")) {
-            paperEntityDraft.setValue("pubTime", line.slice(3));
+            paperEntityDraft.pubTime = line.slice(3);
           } else if (line.startsWith("JF")) {
-            paperEntityDraft.setValue("publication", line.slice(3));
+            paperEntityDraft.publication = line.slice(3);
           } else if (line.startsWith("PB")) {
-            paperEntityDraft.setValue("publisher", line.slice(3));
+            paperEntityDraft.publisher = line.slice(3);
           } else if (line.startsWith("RT")) {
             const type = line.slice(3);
             if (type === "Dissertation/Thesis") {
@@ -105,35 +109,35 @@ export class WebcontentCNKIEntryImporter extends AbstractEntryScraper {
             } else {
               typeIdx = 2;
             }
-            paperEntityDraft.setValue("pubType", typeIdx);
+            paperEntityDraft.pubType = typeIdx;
           } else if (line.startsWith("OP")) {
-            paperEntityDraft.setValue("pages", line.slice(3));
+            paperEntityDraft.pages = line.slice(3);
           } else if (line.startsWith("vo")) {
-            paperEntityDraft.setValue("volume", line.slice(3));
+            paperEntityDraft.volume = line.slice(3);
           } else if (line.startsWith("IS")) {
-            paperEntityDraft.setValue("numbers", line.slice(3));
+            paperEntityDraft.number = line.slice(3);
           } else if (line.startsWith("FD")) {
-            paperEntityDraft.setValue("pubTime", line.slice(3, 7));
+            paperEntityDraft.pubTime = line.slice(3, 7);
           } else if (line.startsWith("ID")) {
             patentID = line.slice(3);
           }
         }
 
         if (isDissertation || isStandard) {
-          paperEntityDraft.setValue("publication", paperEntityDraft.publisher);
+          paperEntityDraft.publication = paperEntityDraft.publisher;
         }
 
         if (isPatent) {
-          paperEntityDraft.setValue("publication", patentID);
+          paperEntityDraft.publication = patentID;
         }
 
         paperEntityDraft.setValue(
           "authors",
-          authorList.filter((a) => a).join(", ")
+          authorList.filter((a) => a).join(", "),
         );
 
         if (paperEntityDraft.title === "") {
-          return []
+          return [];
         }
 
         return [paperEntityDraft];

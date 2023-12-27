@@ -1,7 +1,6 @@
 import fs from "fs";
 
-import { PaperEntity } from "@/models/paper-entity";
-import { eraseProtocol, getFileType, getProtocol } from "@/utils/url";
+import { PaperEntity, urlUtils } from "paperlib-api";
 
 import { AbstractEntryScraper } from "./entry-scraper";
 
@@ -20,12 +19,15 @@ export class ZoteroCSVEntryScraper extends AbstractEntryScraper {
       return false;
     }
     if (
-      (getProtocol(payload.value) === "file" ||
-        getProtocol(payload.value) === "") &&
-      getFileType(payload.value) === "csv"
+      (urlUtils.getProtocol(payload.value) === "file" ||
+        urlUtils.getProtocol(payload.value) === "") &&
+      urlUtils.getFileType(payload.value) === "csv"
     ) {
       // read first line
-      const fileContent = fs.readFileSync(eraseProtocol(payload.value), "utf8");
+      const fileContent = fs.readFileSync(
+        urlUtils.eraseProtocol(payload.value),
+        "utf8",
+      );
       const firstLine = fileContent.split("\n")[0];
       if (firstLine.includes("Item Type")) {
         return true;
@@ -37,13 +39,13 @@ export class ZoteroCSVEntryScraper extends AbstractEntryScraper {
     }
   }
   static async scrape(
-    payload: IZoteroCSVEntryScraperPayload
+    payload: IZoteroCSVEntryScraperPayload,
   ): Promise<PaperEntity[]> {
     if (!this.validPayload(payload)) {
       return [];
     }
 
-    const data = fs.readFileSync(eraseProtocol(payload.value), "utf8");
+    const data = fs.readFileSync(urlUtils.eraseProtocol(payload.value), "utf8");
     let dataList = data.split("\n");
 
     const keys = dataList[0].split('","');
@@ -61,7 +63,7 @@ export class ZoteroCSVEntryScraper extends AbstractEntryScraper {
     for (const value of values) {
       try {
         if (value) {
-          const paperEntityDraft = new PaperEntity(true);
+          const paperEntityDraft = new PaperEntity({}, true);
           paperEntityDraft.setValue("title", value.Title);
           if (value.Author) {
             const authors = value.Author.split(";")
@@ -75,36 +77,36 @@ export class ZoteroCSVEntryScraper extends AbstractEntryScraper {
                 }
               })
               .join(", ");
-            paperEntityDraft.setValue("authors", authors);
+            paperEntityDraft.authors = authors;
           }
-          paperEntityDraft.setValue("publication", value["Publication Title"]);
-          paperEntityDraft.setValue("pubTime", value["Publication Year"]);
-          paperEntityDraft.setValue("doi", value["DOI"]);
-          paperEntityDraft.setValue("addTime", new Date(value["Date Added"]));
+          paperEntityDraft.publication = value["Publication Title"];
+          paperEntityDraft.pubTime = value["Publication Year"];
+          paperEntityDraft.doi = value["DOI"];
+          paperEntityDraft.addTime = new Date(value["Date Added"]);
           const pubType = [
             "journalArticle",
             "conferencePaper",
             "others",
             "book",
           ].indexOf(value["Item Type"]);
-          paperEntityDraft.setValue("pubType", pubType > -1 ? pubType : 2);
+          paperEntityDraft.pubType = pubType > -1 ? pubType : 2;
           const attachments = value["File Attachments"].split(";");
           const mainURL = attachments[0];
           let supURLs = attachments.slice(1).map((url: string) => url.trim());
           if (mainURL) {
             if (mainURL.endsWith(".pdf")) {
-              paperEntityDraft.setValue("mainURL", mainURL);
+              paperEntityDraft.mainURL = mainURL;
             } else {
               supURLs.push(mainURL);
             }
           }
           if (supURLs.length > 0) {
-            paperEntityDraft.setValue("supURLs", supURLs);
+            paperEntityDraft.supURLs = supURLs;
           }
-          paperEntityDraft.setValue("pages", value["Pages"]);
-          paperEntityDraft.setValue("volume", value["Volume"]);
-          paperEntityDraft.setValue("number", value["Issue"]);
-          paperEntityDraft.setValue("publisher", value["Publisher"]);
+          paperEntityDraft.pages = value["Pages"];
+          paperEntityDraft.volume = value["Volume"];
+          paperEntityDraft.number = value["Issue"];
+          paperEntityDraft.publisher = value["Publisher"];
 
           paperEntityDrafts.push(paperEntityDraft);
         }

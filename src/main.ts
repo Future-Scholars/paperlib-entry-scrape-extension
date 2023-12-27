@@ -1,6 +1,5 @@
-import { PLAPI, PLExtAPI } from "paperlib";
+import { PLAPI, PLExtAPI, PLExtension } from "paperlib-api";
 
-import { PLExtension } from "@/models/extension";
 import { EntryScrapeService } from "@/services/entry-scrape-service";
 
 class PaperlibEntryScrapeExtension extends PLExtension {
@@ -10,10 +9,7 @@ class PaperlibEntryScrapeExtension extends PLExtension {
 
   constructor() {
     super({
-      id: "paperlib-entry-scrape-extension",
-      name: "Entry Scrapers",
-      description: "The entry scrape extension for PaperLib.",
-      author: "Paperlib",
+      id: "@future-scholars/paperlib-entry-scrape-extension",
       defaultPreference: {},
     });
 
@@ -25,11 +21,11 @@ class PaperlibEntryScrapeExtension extends PLExtension {
   async initialize() {
     await PLExtAPI.extensionPreferenceService.register(
       this.id,
-      this.defaultPreference
+      this.defaultPreference,
     );
 
     this.disposeCallbacks.push(
-      PLAPI.hookService.hook("scrapeEntry", this.id, "scrapeEntry")
+      PLAPI.hookService.hookTransform("scrapeEntry", this.id, "scrapeEntry"),
     );
   }
 
