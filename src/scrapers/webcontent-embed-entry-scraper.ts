@@ -1,4 +1,5 @@
 import { readFileSync } from "fs";
+import parse from "node-html-parser";
 import { PLAPI, PaperEntity } from "paperlib-api";
 
 import { AbstractEntryScraper } from "./entry-scraper";
@@ -24,22 +25,28 @@ export class WebcontentEmbedEntryScraper extends AbstractEntryScraper {
       return false;
     }
     const urlRegExp = new RegExp("^https?://");
-    const urlTest = urlRegExp.test(payload.url);
+    const urlTest = urlRegExp.test(payload.value.url);
 
     if (!urlTest) {
       return false;
     }
 
-    var el = document.createElement("html");
-    el.innerHTML = payload.document;
+    const root = parse(payload.value.document);
 
-    // Get meta tags
-    const metaTags = el.getElementsByTagName("meta");
+    const metaTags = root.querySelectorAll("meta");
 
     if (metaTags.length > 0) {
       let matched = false;
       for (const meta of metaTags) {
-        if (meta.name === "citation_title") {
+        if (
+          meta.hasAttribute("name") &&
+          meta.getAttribute("name") === "citation_title"
+        ) {
+          matched = true;
+        } else if (
+          meta.hasAttribute("name") &&
+          meta.getAttribute("name") === "dc.Title"
+        ) {
           matched = true;
         }
       }
@@ -57,11 +64,9 @@ export class WebcontentEmbedEntryScraper extends AbstractEntryScraper {
       return [];
     }
 
-    var el = document.createElement("html");
-    el.innerHTML = payload.value.document;
+    const root = parse(payload.value.document);
 
-    // Get meta tags
-    const metaTags = el.getElementsByTagName("meta");
+    const metaTags = root.querySelectorAll("meta");
     if (metaTags.length > 0) {
       const entityDraft = new PaperEntity({}, true);
       let matched = false;
@@ -69,33 +74,45 @@ export class WebcontentEmbedEntryScraper extends AbstractEntryScraper {
       const authors: string[] = [];
 
       for (const meta of metaTags) {
-        if (meta.name === "citation_title" || meta.name === "dc.Title") {
-          entityDraft.title = meta.content;
+        if (
+          meta.getAttribute("name") === "citation_title" ||
+          meta.getAttribute("name") === "dc.Title"
+        ) {
+          entityDraft.title = meta.getAttribute("content") || "";
           matched = true;
         }
-        if (meta.name === "citation_author" || meta.name === "dc.Creator") {
-          authors.push(meta.content);
+        if (
+          meta.getAttribute("name") === "citation_author" ||
+          meta.getAttribute("name") === "dc.Creator"
+        ) {
+          if (meta.getAttribute("content")) {
+            authors.push(meta.getAttribute("content")!);
+          }
         }
         if (
-          meta.name === "citation_publication_date" ||
-          meta.name == "dc.Date"
+          meta.getAttribute("name") === "citation_publication_date" ||
+          meta.getAttribute("name") == "dc.Date"
         ) {
-          entityDraft.pubTime = meta.content.split("/")[0];
+          entityDraft.pubTime =
+            meta.getAttribute("content")?.split("/")[0] || "";
         }
-        if (meta.name === "citation_doi" || meta.name === "dc.Identifier") {
-          entityDraft.doi = meta.content;
+        if (
+          meta.getAttribute("name") === "citation_doi" ||
+          meta.getAttribute("name") === "dc.Identifier"
+        ) {
+          entityDraft.doi = meta.getAttribute("content") || "";
         }
-        // TODO: check this one.
-        if (meta.name === "citation_pdf_url" || meta.name === "dc.Identifier") {
+        if (
+          meta.getAttribute("name") === "citation_pdf_url" ||
+          meta.getAttribute("name") === "dc.Identifier"
+        ) {
           let downloadURL: string;
           if (payload.value.url.includes("adsabs.harvard.edu")) {
-            downloadURL = `https://ui.adsabs.harvard.edu${meta.content}`;
+            downloadURL = `https://ui.adsabs.harvard.edu${meta.getAttribute(
+              "content",
+            )}`;
           } else {
-            if (meta.content.endsWith(".pdf")) {
-              downloadURL = meta.content;
-            } else {
-              downloadURL = meta.content + ".pdf";
-            }
+            downloadURL = meta.getAttribute("content")!;
           }
 
           const downloadedFilePath = await PLAPI.networkTool.downloadPDFs([

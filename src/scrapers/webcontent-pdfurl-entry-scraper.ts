@@ -23,7 +23,7 @@ export class WebcontentPDFURLEntryScraper extends AbstractEntryScraper {
       return false;
     }
     const urlRegExp = new RegExp(".*.pdf$");
-    return urlRegExp.test(payload.url);
+    return urlRegExp.test(payload.value.url);
   }
 
   static async scrape(

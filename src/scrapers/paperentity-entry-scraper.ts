@@ -9,7 +9,7 @@ export interface IPaperEntityEntryScraperPayload {
 
 export class PaperEntityEntryScraper extends AbstractEntryScraper {
   static validPayload(payload: any): boolean {
-    if (payload.type !== "paperEntity") {
+    if (payload.type !== "PaperEntity") {
       return false;
     }
 
@@ -32,11 +32,7 @@ export class PaperEntityEntryScraper extends AbstractEntryScraper {
       return [];
     }
 
-    const paperEntityDraft = new PaperEntity({}, false);
-
-    for (const p of Object.keys(payload.value)) {
-      paperEntityDraft[p] = payload.value[p];
-    }
+    const paperEntityDraft = new PaperEntity(payload.value, false);
 
     return [paperEntityDraft];
   }

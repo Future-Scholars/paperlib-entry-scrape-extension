@@ -27,7 +27,7 @@ export class WebcontentIEEEEntryScraper extends AbstractEntryScraper {
       return false;
     }
     const urlRegExp = new RegExp("^https?://ieeexplore.ieee.org/document");
-    return urlRegExp.test(payload.url);
+    return urlRegExp.test(payload.value.url);
   }
 
   static async scrape(

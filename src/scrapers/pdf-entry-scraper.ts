@@ -1,8 +1,8 @@
 import fs from "fs";
 import { PLAPI, PaperEntity, urlUtils } from "paperlib-api";
 
+import pdfworker from "../utils/pdfjs/worker";
 import { AbstractEntryScraper } from "./entry-scraper";
-import pdfworker from "./pdfworker/worker";
 
 export interface IPDFEntryScraperPayload {
   type: "file";

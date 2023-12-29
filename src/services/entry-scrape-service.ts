@@ -1,4 +1,4 @@
-import { PaperEntity } from "paperlib-api";
+import { PLAPI, PaperEntity, chunkRun } from "paperlib-api";
 
 import { BibTexEntryScraper } from "@/scrapers/bibtex-entry-scraper";
 import { AbstractEntryScraper } from "@/scrapers/entry-scraper";
@@ -21,28 +21,64 @@ const SCRAPER_OBJS = new Map<string, typeof AbstractEntryScraper>([
   ["webcontent-googlescholar", WebcontentGoogleScholarEntryScraper],
   ["webcontent-ieee", WebcontentIEEEEntryScraper],
   ["webcontent-cnki", WebcontentCNKIEntryScraper],
+]);
+
+const ADDITIONAL_SCRAPER_OBJS = new Map<string, typeof AbstractEntryScraper>([
   ["webcontent-pdfurl", WebcontentPDFURLEntryScraper],
   ["webcontent-embed", WebcontentEmbedEntryScraper],
 ]);
+
+interface IEntryPayload {
+  type: string;
+  value: any;
+}
 
 /**
  * EntryScrapeService transforms a data source, such as a local file, web page, etc., into a PaperEntity.*/
 export class EntryScrapeService {
   constructor() {}
 
-  async scrape(payloads: any[]): Promise<PaperEntity[]> {
-    // TODO: should check valid payload structure here.
-    // TODO: Chunkrun?
-    const paperEntityDrafts = await Promise.all(
-      payloads.map(async (payload) => {
-        const paperEntityDrafts = await Promise.all(
-          Array.from(SCRAPER_OBJS.values()).map(async (Scraper) => {
-            return await Scraper.scrape(payload);
-          }),
-        );
-        return paperEntityDrafts.flat();
-      }),
-    );
-    return paperEntityDrafts.flat();
+  async scrape(payloads: IEntryPayload[]): Promise<PaperEntity[]> {
+    const paperEntityDraftsAndErrors = await chunkRun<
+      IEntryPayload,
+      PaperEntity[],
+      PaperEntity[]
+    >(payloads, async (payload) => {
+      const paperEntityDrafts: PaperEntity[] = [];
+      for (const [key, Scraper] of SCRAPER_OBJS.entries()) {
+        try {
+          const objects = await Scraper.scrape(payload);
+          paperEntityDrafts.push(...objects);
+        } catch (error) {
+          PLAPI.logService.error(
+            `Failed to scrape entry payload by ${key}.`,
+            error as Error,
+            true,
+            "EntryScrapeExt",
+          );
+        }
+      }
+
+      if (paperEntityDrafts.length === 0) {
+        for (const [key, Scraper] of ADDITIONAL_SCRAPER_OBJS.entries()) {
+          try {
+            const objects = await Scraper.scrape(payload);
+            paperEntityDrafts.push(...objects);
+          } catch (error) {
+            PLAPI.logService.error(
+              `Failed to scrape entry payload by ${key}.`,
+              error as Error,
+              true,
+              "EntryScrapeExt",
+            );
+          }
+        }
+      }
+
+      return paperEntityDrafts;
+    });
+    const paperEntityDrafts = paperEntityDraftsAndErrors.results.flat();
+
+    return paperEntityDrafts;
   }
 }

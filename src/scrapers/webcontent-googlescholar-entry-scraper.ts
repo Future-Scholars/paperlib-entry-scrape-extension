@@ -4,6 +4,7 @@ import { PLAPI, PaperEntity } from "paperlib-api";
 import { bibtex2json, bibtex2paperEntityDraft } from "@/utils/bibtex";
 
 import { AbstractEntryScraper } from "./entry-scraper";
+import { PDFEntryScraper } from "./pdf-entry-scraper";
 
 export interface IWebcontentGoogleScholarEntryScraperPayload {
   type: "webcontent";
@@ -21,13 +22,12 @@ export class WebcontentGoogleScholarEntryScraper extends AbstractEntryScraper {
       !payload.hasOwnProperty("value") ||
       payload.type !== "webcontent" ||
       !payload.value.hasOwnProperty("url") ||
-      !payload.value.hasOwnProperty("document") ||
-      !payload.value.hasOwnProperty("cookies")
+      !payload.value.hasOwnProperty("document")
     ) {
       return false;
     }
     const urlRegExp = new RegExp("https?://scholar.google.*");
-    return urlRegExp.test(payload.url);
+    return urlRegExp.test(payload.value.url);
   }
 
   static async scrape(
@@ -51,7 +51,19 @@ export class WebcontentGoogleScholarEntryScraper extends AbstractEntryScraper {
 
         if (downloadedFilePath) {
           if (downloadedFilePath.length > 0) {
-            entityDraft.mainURL = downloadedFilePath[0];
+            entityDraft = (
+              await PDFEntryScraper.scrape({
+                type: "file",
+                value: downloadedFilePath[0],
+              })
+            )[0];
+
+            console.log(entityDraft);
+            if (entityDraft.title) {
+              return [entityDraft];
+            } else {
+              entityDraft.mainURL = downloadedFilePath[0];
+            }
           }
         }
       }
@@ -67,11 +79,11 @@ export class WebcontentGoogleScholarEntryScraper extends AbstractEntryScraper {
             "user-agent":
               "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36",
           };
-          const scrapeUrl = `https://scholar.google.com/scholar?q=${titleStr.replaceAll(
-            " ",
-            "+",
-          )}`;
-          await PLAPI.networkTool.get(scrapeUrl, headers, 0);
+          // const scrapeUrl = `https://scholar.google.com/scholar?q=${titleStr.replaceAll(
+          //   " ",
+          //   "+",
+          // )}`;
+          // await PLAPI.networkTool.get(scrapeUrl, headers, 0);
 
           const dataid = title.parentNode.parentNode.attributes["data-aid"];
           if (dataid) {

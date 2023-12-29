@@ -1,6 +1,6 @@
 import fs from "fs";
 
-import { PaperEntity, urlUtils } from "paperlib-api";
+import { PLAPI, PaperEntity, urlUtils } from "paperlib-api";
 
 import { AbstractEntryScraper } from "./entry-scraper";
 
@@ -111,8 +111,12 @@ export class ZoteroCSVEntryScraper extends AbstractEntryScraper {
           paperEntityDrafts.push(paperEntityDraft);
         }
       } catch (e) {
-        // TODO: use logger
-        console.error(e);
+        PLAPI.logService.error(
+          "Cannot parse Zotero CSV file",
+          e as Error,
+          true,
+          "EntryScrapeExt",
+        );
       }
     }
 
