@@ -9,7 +9,7 @@ export interface IWebcontentIEEEEntryScraperPayload {
   value: {
     url: string;
     document: string;
-    cookies: string;
+    cookies: { domain: string; name: string; value: string }[];
   };
 }
 
@@ -88,15 +88,13 @@ export class WebcontentIEEEEntryScraper extends AbstractEntryScraper {
           "iel7",
           "ielx7",
         )}`;
+
+        const cookieJar: any[] = [];
         for (const cookie of payload.value.cookies) {
-          if (cookie) {
-            await cookieJar.setCookie(
-              // @ts-ignore
-              `${cookie.name}=${cookie.value}; domain=${cookie.domain}`,
-              // @ts-ignore
-              `https://${cookie.domain}/`,
-            );
-          }
+          cookieJar.push({
+            cookieStr: `${cookie.name}=${cookie.value}; domain=${cookie.domain}`,
+            currentUrl: `https://${cookie.domain}/`,
+          });
         }
         try {
           let filename = url.split("/").pop() as string;
@@ -106,13 +104,18 @@ export class WebcontentIEEEEntryScraper extends AbstractEntryScraper {
 
           const targetUrl = await PLAPI.networkTool.downloadPDFs(
             [url],
-            cookieJar,
+            cookieJar as any,
           );
           if (targetUrl.length > 0) {
             entityDraft.mainURL = targetUrl[0];
           }
         } catch (e) {
-          console.log(e);
+          PLAPI.logService.error(
+            "Failed to download PDF from IEEE",
+            e as Error,
+            true,
+            "EntryScrapeExt",
+          );
         }
       }
 
