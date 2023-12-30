@@ -58,7 +58,6 @@ export class WebcontentGoogleScholarEntryScraper extends AbstractEntryScraper {
               })
             )[0];
 
-            console.log(entityDraft);
             if (entityDraft.title) {
               return [entityDraft];
             } else {
