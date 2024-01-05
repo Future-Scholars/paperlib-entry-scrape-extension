@@ -1,5 +1,6 @@
 import parse from "node-html-parser";
-import { PLAPI, PaperEntity } from "paperlib-api";
+import { PLAPI } from "paperlib-api/api";
+import { PaperEntity } from "paperlib-api/model";
 
 import { bibtex2json, bibtex2paperEntityDraft } from "@/utils/bibtex";
 

@@ -1,5 +1,7 @@
 import fs from "fs";
-import { PLAPI, PaperEntity, urlUtils } from "paperlib-api";
+import { PLAPI } from "paperlib-api/api";
+import { PaperEntity } from "paperlib-api/model";
+import { urlUtils } from "paperlib-api/utils";
 
 import pdfworker from "../utils/pdfjs/worker";
 import { AbstractEntryScraper } from "./entry-scraper";

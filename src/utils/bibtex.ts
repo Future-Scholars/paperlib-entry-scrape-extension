@@ -1,6 +1,6 @@
 import { Cite, plugins } from "@citation-js/core";
 import * as plugin from "@citation-js/plugin-bibtex";
-import { PaperEntity } from "paperlib-api";
+import { PaperEntity } from "paperlib-api/model";
 
 interface BibtexEntity {
   title: string;

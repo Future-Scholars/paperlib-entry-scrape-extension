@@ -1,7 +1,8 @@
 import { readFileSync } from "fs";
 
 import { bibtex2json, bibtex2paperEntityDraft } from "@/utils/bibtex";
-import { PaperEntity, urlUtils } from "paperlib-api";
+import { PaperEntity } from "paperlib-api/model";
+import { urlUtils } from "paperlib-api/utils";
 
 import { AbstractEntryScraper } from "./entry-scraper";
 

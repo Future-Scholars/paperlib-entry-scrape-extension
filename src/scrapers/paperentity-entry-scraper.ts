@@ -1,4 +1,4 @@
-import { PaperEntity } from "paperlib-api";
+import { PaperEntity } from "paperlib-api/model";
 
 import { AbstractEntryScraper } from "./entry-scraper";
 

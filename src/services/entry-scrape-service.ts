@@ -1,4 +1,6 @@
-import { PLAPI, PaperEntity, chunkRun } from "paperlib-api";
+import { PLAPI } from "paperlib-api/api";
+import { PaperEntity } from "paperlib-api/model";
+import { chunkRun } from "paperlib-api/utils";
 
 import { BibTexEntryScraper } from "@/scrapers/bibtex-entry-scraper";
 import { AbstractEntryScraper } from "@/scrapers/entry-scraper";

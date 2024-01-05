@@ -1,4 +1,4 @@
-import { PLAPI, PLExtAPI, PLExtension } from "paperlib-api";
+import { PLAPI, PLExtAPI, PLExtension } from "paperlib-api/api";
 
 import { EntryScrapeService } from "@/services/entry-scrape-service";
 

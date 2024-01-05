@@ -1,6 +1,7 @@
 import { readFileSync } from "fs";
 import parse from "node-html-parser";
-import { PLAPI, PaperEntity } from "paperlib-api";
+import { PLAPI } from "paperlib-api/api";
+import { PaperEntity } from "paperlib-api/model";
 
 import { AbstractEntryScraper } from "./entry-scraper";
 
