@@ -1,11 +1,12 @@
 {
   "name": "@future-scholars/paperlib-entry-scrape-extension",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "author": "Paperlib",
-  "description": "This extension transforms entry payloads into paper entities for PaperLib.",
+  "description": "This extension transforms entry payloads into paper entities for Paperlib.",
   "main": "dist/main.js",
   "type": "commonjs",
   "manifest_version": "1.0.0",
+  "homepage": "https://github.com/Future-Scholars/paperlib-entry-scrape-extension",
   "scripts": {
     "prebuild": "tsc --noEmit",
     "build": "tsc --noEmit && vite build"
