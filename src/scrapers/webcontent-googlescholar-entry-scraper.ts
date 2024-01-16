@@ -1,5 +1,5 @@
 import parse from "node-html-parser";
-import { PLAPI } from "paperlib-api/api";
+import { PLExtAPI } from "paperlib-api/api";
 import { PaperEntity } from "paperlib-api/model";
 
 import { bibtex2json, bibtex2paperEntityDraft } from "@/utils/bibtex";
@@ -46,7 +46,7 @@ export class WebcontentGoogleScholarEntryScraper extends AbstractEntryScraper {
       // @ts-ignore
       const downloadURL = fileUrlNode?.attributes["href"];
       if (downloadURL) {
-        const downloadedFilePath = await PLAPI.networkTool.downloadPDFs([
+        const downloadedFilePath = await PLExtAPI.networkTool.downloadPDFs([
           downloadURL,
         ]);
 
@@ -88,7 +88,7 @@ export class WebcontentGoogleScholarEntryScraper extends AbstractEntryScraper {
           const dataid = title.parentNode.parentNode.attributes["data-aid"];
           if (dataid) {
             const citeUrl = `https://scholar.google.com/scholar?q=info:${dataid}:scholar.google.com/&output=cite&scirp=1&hl=en`;
-            const citeResponse = await PLAPI.networkTool.get(
+            const citeResponse = await PLExtAPI.networkTool.get(
               citeUrl,
               headers,
               0,
@@ -101,7 +101,7 @@ export class WebcontentGoogleScholarEntryScraper extends AbstractEntryScraper {
                 // @ts-ignore
                 const citeBibtexUrl = citeBibtexNode.attributes["href"];
                 if (citeBibtexUrl) {
-                  const citeBibtexResponse = await PLAPI.networkTool.get(
+                  const citeBibtexResponse = await PLExtAPI.networkTool.get(
                     citeBibtexUrl,
                     headers,
                     0,

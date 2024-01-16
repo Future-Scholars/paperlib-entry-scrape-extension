@@ -1,5 +1,5 @@
 import fs from "fs";
-import { PLAPI } from "paperlib-api/api";
+import { PLExtAPI } from "paperlib-api/api";
 import { PaperEntity } from "paperlib-api/model";
 import { urlUtils } from "paperlib-api/utils";
 
@@ -80,16 +80,18 @@ export class PDFEntryScraper extends AbstractEntryScraper {
     //   headers["Content-Encoding"] = "gzip";
     // }
 
-    const zoteroServiceResponse = await PLAPI.networkTool.post(
+    const zoteroServiceResponse = await PLExtAPI.networkTool.post(
       "https://services.zotero.org/recognizer/recognize",
       zoteroData,
       headers,
       0,
       5000,
-      // dataStr.length > 1000000
+      // dataStr.length > 1000000,
+      false,
+      true,
     );
 
-    const zoteroMetadata = JSON.parse(zoteroServiceResponse.body);
+    const zoteroMetadata = zoteroServiceResponse.body;
 
     if (zoteroMetadata.title) {
       paperEntityDraft.setValue("title", zoteroMetadata.title);

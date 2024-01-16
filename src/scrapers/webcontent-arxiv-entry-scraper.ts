@@ -1,6 +1,6 @@
-import { PLAPI } from "paperlib-api/api";
 import { PaperEntity } from "paperlib-api/model";
 
+import { PLExtAPI } from "paperlib-api";
 import { AbstractEntryScraper } from "./entry-scraper";
 import { PDFEntryScraper } from "./pdf-entry-scraper";
 
@@ -41,7 +41,7 @@ export class WebcontentArXivEntryScraper extends AbstractEntryScraper {
     if (arXivID) {
       const downloadURL = `https://arxiv.org/pdf/${arXivID}.pdf`;
 
-      const downloadedFilePath = await PLAPI.networkTool.downloadPDFs([
+      const downloadedFilePath = await PLExtAPI.networkTool.downloadPDFs([
         downloadURL,
       ]);
 

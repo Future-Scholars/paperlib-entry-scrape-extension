@@ -1,5 +1,5 @@
 import parse from "node-html-parser";
-import { PLAPI } from "paperlib-api/api";
+import { PLAPI, PLExtAPI } from "paperlib-api/api";
 import { PaperEntity } from "paperlib-api/model";
 import { CookieJar } from "tough-cookie";
 
@@ -103,7 +103,7 @@ export class WebcontentIEEEEntryScraper extends AbstractEntryScraper {
             filename += ".pdf";
           }
 
-          const targetUrl = await PLAPI.networkTool.downloadPDFs(
+          const targetUrl = await PLExtAPI.networkTool.downloadPDFs(
             [url],
             cookieJar as any,
           );

@@ -1,6 +1,6 @@
 import { readFileSync } from "fs";
 import parse from "node-html-parser";
-import { PLAPI } from "paperlib-api/api";
+import { PLExtAPI } from "paperlib-api/api";
 import { PaperEntity } from "paperlib-api/model";
 
 import { AbstractEntryScraper } from "./entry-scraper";
@@ -116,7 +116,7 @@ export class WebcontentEmbedEntryScraper extends AbstractEntryScraper {
             downloadURL = meta.getAttribute("content")!;
           }
 
-          const downloadedFilePath = await PLAPI.networkTool.downloadPDFs([
+          const downloadedFilePath = await PLExtAPI.networkTool.downloadPDFs([
             downloadURL,
           ]);
           if (downloadedFilePath.length > 0) {

@@ -1,5 +1,5 @@
 import parse from "node-html-parser";
-import { PLAPI } from "paperlib-api/api";
+import { PLExtAPI } from "paperlib-api/api";
 import { PaperEntity } from "paperlib-api/model";
 
 import { AbstractEntryScraper } from "./entry-scraper";
@@ -48,7 +48,7 @@ export class WebcontentCNKIEntryScraper extends AbstractEntryScraper {
       ordertype: "desc",
     };
 
-    const response = await PLAPI.networkTool.postForm(
+    const response = await PLExtAPI.networkTool.postForm(
       refRequestUrl,
       refRequestFormData as any,
     );

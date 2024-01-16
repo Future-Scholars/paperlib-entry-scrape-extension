@@ -1,6 +1,6 @@
 import fs from "fs";
 
-import { PLAPI } from "paperlib-api";
+import { PLAPI } from "paperlib-api/api";
 import { PaperEntity } from "paperlib-api/model";
 import { urlUtils } from "paperlib-api/utils";
 
