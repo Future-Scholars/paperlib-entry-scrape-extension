@@ -1,7 +1,8 @@
+import { franc } from "franc";
 import fs from "fs";
 import { PLExtAPI } from "paperlib-api/api";
 import { PaperEntity } from "paperlib-api/model";
-import { urlUtils } from "paperlib-api/utils";
+import { stringUtils, urlUtils } from "paperlib-api/utils";
 
 import pdfworker from "../utils/pdfjs/worker";
 import { AbstractEntryScraper } from "./entry-scraper";
@@ -52,15 +53,11 @@ export class PDFEntryScraper extends AbstractEntryScraper {
       return false;
     }
   }
-  static async scrape(
+
+  private static async _scrapeByZoteroService(
     payload: IPDFEntryScraperPayload,
-  ): Promise<PaperEntity[]> {
-    if (!this.validPayload(payload)) {
-      return [];
-    }
-
-    const paperEntityDraft = new PaperEntity({}, true);
-
+    paperEntityDraft: PaperEntity,
+  ) {
     let buf = fs.readFileSync(urlUtils.eraseProtocol(payload.value));
     let zoteroData = await pdfworker.getRecognizerData(
       buf,
@@ -110,7 +107,151 @@ export class PDFEntryScraper extends AbstractEntryScraper {
     if (zoteroMetadata.doi) {
       paperEntityDraft.setValue("doi", zoteroMetadata.doi);
     }
+
+    return { paperEntityDraft, pages: zoteroData.pages };
+  }
+
+  private static async _scrapeByLocal(
+    paperEntityDraft: PaperEntity,
+    pages: any,
+  ) {
+    // Get largest text
+    const textData = pages[0][2][0][0][0][4];
+
+    let largestText = "";
+    let largestTextFontSize = 0;
+    let secondLargestText = "";
+    let secondLargestTextFontSize = 0;
+    let lastTextFontSize = 0;
+    let isSpecialStyleTitle: string | undefined = undefined;
+    let fulltext = "";
+
+    for (const text of textData) {
+      const wordList = text[0];
+      for (const word of wordList) {
+        const chars = word[13];
+        if (chars.includes("ICLR")) {
+          isSpecialStyleTitle = "ICLR";
+        }
+        const fontSize = word[4];
+        const spaceAfter = word[5];
+
+        if (isSpecialStyleTitle) {
+          if (isSpecialStyleTitle === "ICLR") {
+            if (fontSize === 17.2154) {
+              if (largestTextFontSize !== 17.2154) {
+                largestText = "";
+                largestTextFontSize = 17.2154;
+              }
+              if (chars === "-") {
+                continue;
+              }
+              largestText += `${chars}${" ".repeat(spaceAfter)}`;
+            } else if (fontSize === 13.7723 || fontSize === 0) {
+              if (lastTextFontSize === 13.7723 && chars.startsWith("-")) {
+                largestText += `${chars.splice(0)}${" ".repeat(spaceAfter)}`;
+              } else {
+                largestText += `${chars.toLowerCase()}${" ".repeat(
+                  spaceAfter,
+                )}`;
+              }
+            }
+          }
+        } else {
+          if (fontSize > largestTextFontSize) {
+            secondLargestText = largestText;
+            secondLargestTextFontSize = largestTextFontSize;
+            largestText = chars;
+            largestTextFontSize = fontSize;
+          } else if (fontSize === largestTextFontSize) {
+            largestText = largestText + `${chars}${" ".repeat(spaceAfter)}`;
+          } else if (fontSize > secondLargestTextFontSize) {
+            secondLargestText = chars;
+            secondLargestTextFontSize = fontSize;
+          } else if (fontSize === secondLargestTextFontSize) {
+            secondLargestText =
+              secondLargestText + `${chars}${" ".repeat(spaceAfter)}`;
+          }
+        }
+
+        lastTextFontSize = fontSize;
+        fulltext += `${chars}${" ".repeat(spaceAfter)}`;
+      }
+      fulltext += "\n";
+    }
+
+    // Title
+    const lang = franc(largestText);
+    let title: string;
+    if (
+      largestText.length === 1 ||
+      (lang !== "cmn" && lang !== "jpn" && !largestText.includes(" "))
+    ) {
+      title = secondLargestText.trim();
+    } else {
+      title = largestText.trim();
+    }
+    paperEntityDraft.setValue("title", title);
+
+    // ArXiv
+    let arxivIds = fulltext.match(
+      new RegExp(
+        "arXiv:(\\d{4}.\\d{4,5}|[a-z\\-] (\\.[A-Z]{2})?\\/\\d{7})(v\\d )?",
+        "g",
+      ),
+    );
+    if (arxivIds) {
+      arxivIds[0] = arxivIds[0].replace("arXiv:", "");
+    }
+    // if not start with number, should be arXiv ID before 2007
+    if (
+      !arxivIds ||
+      (arxivIds?.length > 0 && !arxivIds[0].slice(0, 1).match(/\d/))
+    ) {
+      arxivIds = fulltext.match(new RegExp("arXiv:(.*/\\d{7})(v\\d )?", "g"));
+    }
+    if (arxivIds) {
+      const arxivId = stringUtils.formatString({
+        str: arxivIds[0],
+        removeWhite: true,
+      });
+      paperEntityDraft.setValue("arxiv", arxivId);
+    }
+
+    // DOI
+    const dois = fulltext.match(/10.\d{4,9}\/[-._;()/:A-Z0-9]+/gim);
+    if (dois && dois.length > 0) {
+      const doi = stringUtils.formatString({ str: dois[0], removeWhite: true });
+      if (doi.endsWith(",") || doi.endsWith(".")) {
+        paperEntityDraft.setValue("doi", paperEntityDraft.doi.slice(0, -1));
+      } else {
+        paperEntityDraft.setValue("doi", doi);
+      }
+    }
+
+    return paperEntityDraft;
+  }
+
+  static async scrape(
+    payload: IPDFEntryScraperPayload,
+  ): Promise<PaperEntity[]> {
+    if (!this.validPayload(payload)) {
+      return [];
+    }
+
+    let paperEntityDraft = new PaperEntity({}, true);
+
     paperEntityDraft.setValue("mainURL", payload.value);
+
+    const result = await this._scrapeByZoteroService(payload, paperEntityDraft);
+    paperEntityDraft = result.paperEntityDraft;
+
+    if (!paperEntityDraft.title) {
+      paperEntityDraft = await this._scrapeByLocal(
+        paperEntityDraft,
+        result.pages,
+      );
+    }
 
     return [paperEntityDraft];
   }
