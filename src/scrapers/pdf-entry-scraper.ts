@@ -188,7 +188,8 @@ export class PDFEntryScraper extends AbstractEntryScraper {
     let title: string;
     if (
       largestText.length === 1 ||
-      (lang !== "cmn" && lang !== "jpn" && !largestText.includes(" "))
+      (lang !== "cmn" && lang !== "jpn" && !largestText.includes(" ")) ||
+      largestText.startsWith("arXiv:")
     ) {
       title = secondLargestText.trim();
     } else {
@@ -264,7 +265,6 @@ export class PDFEntryScraper extends AbstractEntryScraper {
         result.pages,
       );
     }
-
     return [paperEntityDraft];
   }
 }
