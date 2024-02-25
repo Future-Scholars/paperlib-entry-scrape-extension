@@ -57,6 +57,7 @@ export class PDFEntryScraper extends AbstractEntryScraper {
   private static async _scrapeByZoteroService(
     payload: IPDFEntryScraperPayload,
     paperEntityDraft: PaperEntity,
+    locallyParse: boolean,
   ) {
     let buf = fs.readFileSync(urlUtils.eraseProtocol(payload.value));
     let zoteroData = await pdfworker.getRecognizerData(
@@ -72,40 +73,42 @@ export class PDFEntryScraper extends AbstractEntryScraper {
     };
 
     zoteroData.pages = zoteroData.pages.slice(0, 1);
-    const dataStr = JSON.stringify(zoteroData);
+    // const dataStr = JSON.stringify(zoteroData);
     // if (dataStr.length > 1000) {
     //   headers["Content-Encoding"] = "gzip";
     // }
 
-    const zoteroServiceResponse = await PLExtAPI.networkTool.post(
-      "https://services.zotero.org/recognizer/recognize",
-      zoteroData,
-      headers,
-      0,
-      5000,
-      // dataStr.length > 1000000,
-      false,
-      true,
-    );
-
-    const zoteroMetadata = zoteroServiceResponse.body;
-
-    if (zoteroMetadata.title) {
-      paperEntityDraft.setValue("title", zoteroMetadata.title);
-    }
-    if (zoteroMetadata.authors) {
-      const authors = zoteroMetadata.authors.map(
-        (author: { firstName: string; lastName: string }) => {
-          return `${author.firstName} ${author.lastName}`;
-        },
+    if (!locallyParse) {
+      const zoteroServiceResponse = await PLExtAPI.networkTool.post(
+        "https://services.zotero.org/recognizer/recognize",
+        zoteroData,
+        headers,
+        0,
+        5000,
+        // dataStr.length > 1000000,
+        false,
+        true,
       );
-      paperEntityDraft.setValue("authors", authors.join(", "));
-    }
-    if (zoteroMetadata.arxiv) {
-      paperEntityDraft.setValue("arxiv", zoteroMetadata.arxiv);
-    }
-    if (zoteroMetadata.doi) {
-      paperEntityDraft.setValue("doi", zoteroMetadata.doi);
+
+      const zoteroMetadata = zoteroServiceResponse.body;
+
+      if (zoteroMetadata.title) {
+        paperEntityDraft.setValue("title", zoteroMetadata.title);
+      }
+      if (zoteroMetadata.authors) {
+        const authors = zoteroMetadata.authors.map(
+          (author: { firstName: string; lastName: string }) => {
+            return `${author.firstName} ${author.lastName}`;
+          },
+        );
+        paperEntityDraft.setValue("authors", authors.join(", "));
+      }
+      if (zoteroMetadata.arxiv) {
+        paperEntityDraft.setValue("arxiv", zoteroMetadata.arxiv);
+      }
+      if (zoteroMetadata.doi) {
+        paperEntityDraft.setValue("doi", zoteroMetadata.doi);
+      }
     }
 
     return { paperEntityDraft, pages: zoteroData.pages };
@@ -243,7 +246,16 @@ export class PDFEntryScraper extends AbstractEntryScraper {
 
     paperEntityDraft.setValue("mainURL", payload.value);
 
-    const result = await this._scrapeByZoteroService(payload, paperEntityDraft);
+    const locallyParse =
+      (PLExtAPI.extensionPreferenceService.get(
+        "@future-scholars/paperlib-entry-scrape-extension",
+        "local-pdf-parse",
+      ) as boolean);
+    const result = await this._scrapeByZoteroService(
+      payload,
+      paperEntityDraft,
+      locallyParse,
+    );
     paperEntityDraft = result.paperEntityDraft;
 
     if (!paperEntityDraft.title) {

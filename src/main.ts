@@ -10,7 +10,15 @@ class PaperlibEntryScrapeExtension extends PLExtension {
   constructor() {
     super({
       id: "@future-scholars/paperlib-entry-scrape-extension",
-      defaultPreference: {},
+      defaultPreference: {
+        "local-pdf-parse": {
+          type: "boolean",
+          name: "Parse PDF locally",
+          description: "Use local function to parse PDFs (fast) or the online API (accurate)",
+          value: true,
+          order: 1,
+        }
+      },
     });
 
     this._entryScrapeService = new EntryScrapeService();
