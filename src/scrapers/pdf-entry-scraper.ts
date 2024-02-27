@@ -128,6 +128,10 @@ export class PDFEntryScraper extends AbstractEntryScraper {
     let lastTextFontSize = 0;
     let isSpecialStyleTitle: string | undefined = undefined;
     let fulltext = "";
+    let textMode = -1;
+    let lastXMax = -1;
+    let lastYMin = -1;
+
 
     for (const text of textData) {
       const wordList = text[0];
@@ -138,6 +142,15 @@ export class PDFEntryScraper extends AbstractEntryScraper {
         }
         const fontSize = word[4];
         const spaceAfter = word[5];
+        const rotation = word[7];
+        const xMax = word[2];
+        const yMin = word[1];
+
+
+        if (rotation !== 0) {
+          // Skip rotated text
+          continue;
+        }
 
         if (isSpecialStyleTitle) {
           if (isSpecialStyleTitle === "ICLR") {
@@ -164,14 +177,28 @@ export class PDFEntryScraper extends AbstractEntryScraper {
           if (fontSize > largestTextFontSize) {
             secondLargestText = largestText;
             secondLargestTextFontSize = largestTextFontSize;
-            largestText = chars;
+            largestText = `${chars}${" ".repeat(spaceAfter)}`;
             largestTextFontSize = fontSize;
           } else if (fontSize === largestTextFontSize) {
-            largestText = largestText + `${chars}${" ".repeat(spaceAfter)}`;
+            if ((textMode === 0 && yMin !== lastYMin) || (textMode === 1 && xMax !== lastXMax)) {
+              // New line
+              largestText = largestText.trimEnd()
+              largestText += " ";
+              console.log("new line", largestText, chars, spaceAfter, lastXMax, lastYMin, xMax, yMin, textMode)
+              textMode = -1;
+            }
+            largestText = largestText + `${chars.trim()}${" ".repeat(spaceAfter)}`;
           } else if (fontSize > secondLargestTextFontSize) {
-            secondLargestText = chars;
+            secondLargestText = `${chars}${" ".repeat(spaceAfter)}`;
             secondLargestTextFontSize = fontSize;
           } else if (fontSize === secondLargestTextFontSize) {
+            if ((textMode === 0 && yMin !== lastYMin) || (textMode === 1 && xMax !== lastXMax)) {
+              // New line
+              secondLargestText = secondLargestText.trimEnd()
+              secondLargestText += " ";
+              textMode = -1
+            }
+
             secondLargestText =
               secondLargestText + `${chars}${" ".repeat(spaceAfter)}`;
           }
@@ -179,6 +206,19 @@ export class PDFEntryScraper extends AbstractEntryScraper {
 
         lastTextFontSize = fontSize;
         fulltext += `${chars}${" ".repeat(spaceAfter)}`;
+
+        if (xMax === lastXMax) {
+          textMode = 1;
+        }
+        if (yMin === lastYMin) {
+          textMode = 0;
+        }
+        if (xMax !== lastXMax && yMin !== lastYMin) {
+          textMode = -1;
+        }
+        
+        lastXMax = xMax;
+        lastYMin = yMin;
       }
       fulltext += "\n";
     }
@@ -186,6 +226,10 @@ export class PDFEntryScraper extends AbstractEntryScraper {
     // Title
     const lang = franc(largestText);
     let title: string;
+
+    console.log(largestText)
+    console.log(secondLargestText)
+
     if (
       largestText.length === 1 ||
       (lang !== "cmn" && lang !== "jpn" && !largestText.includes(" ")) ||

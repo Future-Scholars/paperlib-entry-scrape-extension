@@ -9,7 +9,7 @@ export interface IPaperEntityEntryScraperPayload {
 
 export class PaperEntityEntryScraper extends AbstractEntryScraper {
   static validPayload(payload: any): boolean {
-    if (payload.type !== "PaperEntity") {
+    if (payload.type !== "PaperEntity" && payload.type !== "paperEntity") {
       return false;
     }
 
