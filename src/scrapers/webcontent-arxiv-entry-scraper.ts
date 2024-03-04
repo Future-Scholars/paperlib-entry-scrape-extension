@@ -1,6 +1,6 @@
 import { PaperEntity } from "paperlib-api/model";
 
-import { PLExtAPI } from "paperlib-api";
+import { PLAPI, PLExtAPI } from "paperlib-api/api";
 import { AbstractEntryScraper } from "./entry-scraper";
 import { PDFEntryScraper } from "./pdf-entry-scraper";
 
@@ -40,15 +40,37 @@ export class WebcontentArXivEntryScraper extends AbstractEntryScraper {
 
     if (arXivID) {
       const downloadURL = `https://arxiv.org/pdf/${arXivID}.pdf`;
+      PLAPI.logService.info(
+        `Downloading PDF from ${downloadURL}`,
+        "",
+        false,
+        "EntryScrapeExt",
+      );
 
       const downloadedFilePath = await PLExtAPI.networkTool.downloadPDFs([
         downloadURL,
       ]);
 
-      return PDFEntryScraper.scrape({
+      PLAPI.logService.info(
+        `Downloaded PDF to ${downloadedFilePath}`,
+        "",
+        false,
+        "EntryScrapeExt",
+      );
+
+      const entities = await PDFEntryScraper.scrape({
         type: "file",
         value: downloadedFilePath[0],
       });
+
+      PLAPI.logService.info(
+        `Parsing PDF yields ${entities.length} paper entities.`,
+        "",
+        false,
+        "EntryScrapeExt",
+      );
+
+      return entities;
     } else {
       return [];
     }

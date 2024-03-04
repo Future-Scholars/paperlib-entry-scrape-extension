@@ -1,6 +1,6 @@
 import { franc } from "franc";
 import fs from "fs";
-import { PLExtAPI } from "paperlib-api/api";
+import { PLAPI, PLExtAPI } from "paperlib-api/api";
 import { PaperEntity } from "paperlib-api/model";
 import { stringUtils, urlUtils } from "paperlib-api/utils";
 
@@ -59,6 +59,7 @@ export class PDFEntryScraper extends AbstractEntryScraper {
     paperEntityDraft: PaperEntity,
     locallyParse: boolean,
   ) {
+    PLAPI.logService.info("Scraping PDF by Zotero service.", "", false, "EntryScrapeExt")
     let buf = fs.readFileSync(urlUtils.eraseProtocol(payload.value));
     let zoteroData = await pdfworker.getRecognizerData(
       buf,
@@ -84,8 +85,7 @@ export class PDFEntryScraper extends AbstractEntryScraper {
         zoteroData,
         headers,
         0,
-        5000,
-        // dataStr.length > 1000000,
+        15000,
         false,
         true,
       );

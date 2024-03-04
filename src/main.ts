@@ -45,15 +45,34 @@ class PaperlibEntryScrapeExtension extends PLExtension {
   }
 
   async scrapeEntry(payloads: any[]) {
-    console.time("Scrape Entry");
+    const startTime = Date.now();
+    PLAPI.logService.info(
+      `Scrape entry - start`,
+      JSON.stringify(payloads),
+      false,
+      "EntryScrapeExt",
+    )
 
     if (payloads.length === 0) {
-      console.timeEnd("Scrape Entry");
+      const endTime = Date.now();
+      PLAPI.logService.info(
+        `Scrape entry - done`,
+        `Time: ${endTime - startTime}ms`,
+        false,
+        "EntryScrapeExt",
+      )
       return [];
     }
 
     const paperEntityDrafts = await this._entryScrapeService.scrape(payloads);
-    console.timeEnd("Scrape Entry");
+
+    const endTime = Date.now();
+    PLAPI.logService.info(
+      `Scrape entry - done`,
+      `Time: ${endTime - startTime}ms, Result: ${paperEntityDrafts.length} entities.`,
+      false,
+      "EntryScrapeExt",
+    )
     return paperEntityDrafts;
   }
 }

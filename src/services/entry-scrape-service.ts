@@ -41,6 +41,13 @@ export class EntryScrapeService {
   constructor() {}
 
   async scrape(payloads: IEntryPayload[]): Promise<PaperEntity[]> {
+      PLAPI.logService.info(
+        `Transform entry payloads...`,
+        JSON.stringify(payloads),
+        false,
+        "EntryScrapeExt",
+      )
+
     const paperEntityDraftsAndErrors = await chunkRun<
       IEntryPayload,
       PaperEntity[],
@@ -80,6 +87,14 @@ export class EntryScrapeService {
       return paperEntityDrafts;
     });
     const paperEntityDrafts = paperEntityDraftsAndErrors.results.flat();
+
+    PLAPI.logService.info(
+      `Transformed entry payloads.`,
+      `${paperEntityDrafts.length} paper entities.`,
+      false,
+      "EntryScrapeExt",
+    );
+
 
     return paperEntityDrafts;
   }
