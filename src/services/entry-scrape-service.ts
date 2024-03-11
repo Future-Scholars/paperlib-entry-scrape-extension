@@ -43,7 +43,7 @@ export class EntryScrapeService {
   async scrape(payloads: IEntryPayload[]): Promise<PaperEntity[]> {
       PLAPI.logService.info(
         `Transform entry payloads...`,
-        JSON.stringify(payloads),
+        JSON.stringify(payloads).substring(0, 100),
         false,
         "EntryScrapeExt",
       )

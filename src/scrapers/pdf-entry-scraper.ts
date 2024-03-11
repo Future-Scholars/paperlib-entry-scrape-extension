@@ -184,7 +184,6 @@ export class PDFEntryScraper extends AbstractEntryScraper {
               // New line
               largestText = largestText.trimEnd()
               largestText += " ";
-              console.log("new line", largestText, chars, spaceAfter, lastXMax, lastYMin, xMax, yMin, textMode)
               textMode = -1;
             }
             largestText = largestText + `${chars.trim()}${" ".repeat(spaceAfter)}`;
@@ -227,9 +226,6 @@ export class PDFEntryScraper extends AbstractEntryScraper {
     const lang = franc(largestText);
     let title: string;
 
-    console.log(largestText)
-    console.log(secondLargestText)
-
     if (
       largestText.length === 1 ||
       (lang !== "cmn" && lang !== "jpn" && !largestText.includes(" ")) ||
@@ -267,10 +263,10 @@ export class PDFEntryScraper extends AbstractEntryScraper {
     }
 
     // DOI
-    const dois = fulltext.match(/10.\d{4,9}\/[-._;()/:A-Z0-9]+/gim);
+    const dois = fulltext.match(/10.\d{4,9}\/[-._;()\/:A-Z0-9]+/mgi);
     if (dois && dois.length > 0) {
       const doi = stringUtils.formatString({ str: dois[0], removeWhite: true });
-      if (doi.endsWith(",") || doi.endsWith(".")) {
+      if (doi.endsWith(",") || doi.endsWith(".") || doi.endsWith("/")) {
         paperEntityDraft.setValue("doi", paperEntityDraft.doi.slice(0, -1));
       } else {
         paperEntityDraft.setValue("doi", doi);

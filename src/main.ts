@@ -48,7 +48,7 @@ class PaperlibEntryScrapeExtension extends PLExtension {
     const startTime = Date.now();
     PLAPI.logService.info(
       `Scrape entry - start`,
-      JSON.stringify(payloads),
+      JSON.stringify(payloads).substring(0, 100),
       false,
       "EntryScrapeExt",
     )
