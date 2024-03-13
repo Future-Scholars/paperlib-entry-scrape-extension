@@ -123,8 +123,10 @@ export class PDFEntryScraper extends AbstractEntryScraper {
 
     let largestText = "";
     let largestTextFontSize = 0;
+    let largestTextFontIndex = -1;
     let secondLargestText = "";
     let secondLargestTextFontSize = 0;
+    let secondLargestTextFontIndex = -1;
     let lastTextFontSize = 0;
     let isSpecialStyleTitle: string | undefined = undefined;
     let fulltext = "";
@@ -143,6 +145,7 @@ export class PDFEntryScraper extends AbstractEntryScraper {
         const fontSize = word[4];
         const spaceAfter = word[5];
         const rotation = word[7];
+        const fontIndex = word[12]
         const xMax = word[2];
         const yMin = word[1];
 
@@ -177,9 +180,15 @@ export class PDFEntryScraper extends AbstractEntryScraper {
           if (fontSize > largestTextFontSize) {
             secondLargestText = largestText;
             secondLargestTextFontSize = largestTextFontSize;
+            secondLargestTextFontIndex = largestTextFontIndex;
             largestText = `${chars}${" ".repeat(spaceAfter)}`;
             largestTextFontSize = fontSize;
+            largestTextFontIndex = fontIndex;
           } else if (fontSize === largestTextFontSize) {
+            if (largestTextFontIndex !== fontIndex) {
+              continue
+            }
+
             if ((textMode === 0 && yMin !== lastYMin) || (textMode === 1 && xMax !== lastXMax)) {
               // New line
               largestText = largestText.trimEnd()
@@ -190,7 +199,12 @@ export class PDFEntryScraper extends AbstractEntryScraper {
           } else if (fontSize > secondLargestTextFontSize) {
             secondLargestText = `${chars}${" ".repeat(spaceAfter)}`;
             secondLargestTextFontSize = fontSize;
+            secondLargestTextFontIndex = fontIndex;
           } else if (fontSize === secondLargestTextFontSize) {
+            if (secondLargestTextFontIndex !== fontIndex) {
+              continue
+            }
+
             if ((textMode === 0 && yMin !== lastYMin) || (textMode === 1 && xMax !== lastXMax)) {
               // New line
               secondLargestText = secondLargestText.trimEnd()
