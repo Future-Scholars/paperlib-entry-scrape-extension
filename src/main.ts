@@ -17,6 +17,13 @@ class PaperlibEntryScrapeExtension extends PLExtension {
           description: "Use local function to parse PDFs (fast) or the online API (accurate)",
           value: true,
           order: 1,
+        },
+        "download-pdf": {
+          type: "boolean",
+          name: "Download PDF",
+          description: "Download PDFs when importing papers via the browser extension.",
+          value: true,
+          order: 2,
         }
       },
     });

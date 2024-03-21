@@ -116,17 +116,26 @@ export class WebcontentEmbedEntryScraper extends AbstractEntryScraper {
             downloadURL = meta.getAttribute("content")!;
           }
 
-          const downloadedFilePath = await PLExtAPI.networkTool.downloadPDFs([
-            downloadURL,
-          ]);
-          if (downloadedFilePath.length > 0) {
-            const fileContent = readFileSync(downloadedFilePath[0]);
-            if (
-              fileContent.subarray(0, 5).toString() === "%PDF-" &&
-              fileContent.subarray(-5).toString().includes("EOF")
-            ) {
-              entityDraft.mainURL = downloadedFilePath[0];
+          const downloadPDF =
+          (PLExtAPI.extensionPreferenceService.get(
+            "@future-scholars/paperlib-entry-scrape-extension",
+            "download-pdf",
+          ) as boolean);
+          if (downloadPDF)  {
+            const downloadedFilePath = await PLExtAPI.networkTool.downloadPDFs([
+              downloadURL,
+            ]);
+            if (downloadedFilePath.length > 0) {
+              const fileContent = readFileSync(downloadedFilePath[0]);
+              if (
+                fileContent.subarray(0, 5).toString() === "%PDF-" &&
+                fileContent.subarray(-5).toString().includes("EOF")
+              ) {
+                entityDraft.mainURL = downloadedFilePath[0];
+              }
             }
+          } else {
+            entityDraft.note = `<md>\n[PDF](${downloadURL})`;
           }
         }
       }

@@ -59,7 +59,6 @@ export class PDFEntryScraper extends AbstractEntryScraper {
     paperEntityDraft: PaperEntity,
     locallyParse: boolean,
   ) {
-    PLAPI.logService.info("Scraping PDF by Zotero service.", "", false, "EntryScrapeExt")
     let buf = fs.readFileSync(urlUtils.eraseProtocol(payload.value));
     let zoteroData = await pdfworker.getRecognizerData(
       buf,
@@ -73,13 +72,14 @@ export class PDFEntryScraper extends AbstractEntryScraper {
       "Content-Type": "application/json",
     };
 
-    zoteroData.pages = zoteroData.pages.slice(0, 1);
+    zoteroData.pages = zoteroData.pages.slice(0, 2);
     // const dataStr = JSON.stringify(zoteroData);
     // if (dataStr.length > 1000) {
     //   headers["Content-Encoding"] = "gzip";
     // }
 
     if (!locallyParse) {
+      PLAPI.logService.info("Scraping PDF by Zotero service.", "", false, "EntryScrapeExt")
       const zoteroServiceResponse = await PLExtAPI.networkTool.post(
         "https://services.zotero.org/recognizer/recognize",
         zoteroData,

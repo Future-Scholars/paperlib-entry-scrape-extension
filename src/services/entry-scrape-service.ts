@@ -41,6 +41,15 @@ export class EntryScrapeService {
   constructor() {}
 
   async scrape(payloads: IEntryPayload[]): Promise<PaperEntity[]> {
+      if (payloads.length >= 100) {
+        PLAPI.logService.warn(
+          `Scrape ${payloads.length} (>= 100) papers at once may cause unwanted results, Please consider to scrape them in smaller chunks.`,
+          "",
+          true,
+          "EntryScrapeExt",
+        )
+      }
+
       PLAPI.logService.info(
         `Transform entry payloads...`,
         JSON.stringify(payloads).substring(0, 100),

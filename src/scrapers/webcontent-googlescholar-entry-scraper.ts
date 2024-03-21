@@ -38,6 +38,12 @@ export class WebcontentGoogleScholarEntryScraper extends AbstractEntryScraper {
       return [];
     }
 
+    const downloadPDF =
+    (PLExtAPI.extensionPreferenceService.get(
+      "@future-scholars/paperlib-entry-scrape-extension",
+      "download-pdf",
+    ) as boolean);
+
     const paper = parse(payload.value.document);
 
     if (paper) {
@@ -46,6 +52,7 @@ export class WebcontentGoogleScholarEntryScraper extends AbstractEntryScraper {
       // @ts-ignore
       const downloadURL = fileUrlNode?.attributes["href"];
       if (downloadURL) {
+        if (downloadPDF) {
         const downloadedFilePath = await PLExtAPI.networkTool.downloadPDFs([
           downloadURL,
         ]);
@@ -65,6 +72,8 @@ export class WebcontentGoogleScholarEntryScraper extends AbstractEntryScraper {
               entityDraft.mainURL = downloadedFilePath[0];
             }
           }
+        }} else {
+          entityDraft.note = `<md>\n[PDF](${downloadURL})`;
         }
       }
 
@@ -88,11 +97,15 @@ export class WebcontentGoogleScholarEntryScraper extends AbstractEntryScraper {
           const dataid = title.parentNode.parentNode.attributes["data-aid"];
           if (dataid) {
             const citeUrl = `https://scholar.google.com/scholar?q=info:${dataid}:scholar.google.com/&output=cite&scirp=1&hl=en`;
-            const citeResponse = await PLExtAPI.networkTool.get(
-              citeUrl,
-              headers,
-              0,
-            );
+            let citeResponse;
+            try{
+              const citeResponse = await PLExtAPI.networkTool.get(
+                citeUrl,
+                headers,
+                0,
+              );
+            } catch (e) {
+            }
             if (citeResponse?.body) {
               const citeRoot = parse(citeResponse?.body);
               const citeBibtexNode = citeRoot.lastChild
@@ -129,7 +142,9 @@ export class WebcontentGoogleScholarEntryScraper extends AbstractEntryScraper {
                 return [];
               }
             } else {
-              return [];
+              entityDraft.title = titleStr;
+
+              return [entityDraft];
             }
           } else {
             return [];

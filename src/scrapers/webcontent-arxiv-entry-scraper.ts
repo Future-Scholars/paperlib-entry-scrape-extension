@@ -36,9 +36,15 @@ export class WebcontentArXivEntryScraper extends AbstractEntryScraper {
       return [];
     }
 
+    const downloadPDF =
+      (PLExtAPI.extensionPreferenceService.get(
+        "@future-scholars/paperlib-entry-scrape-extension",
+        "download-pdf",
+      ) as boolean);
+
     const arXivID = payload.value.url.split("/")[4].replace(".pdf", "");
 
-    if (arXivID) {
+    if (arXivID && downloadPDF) {
       const downloadURL = `https://arxiv.org/pdf/${arXivID}.pdf`;
       PLAPI.logService.info(
         `Downloading PDF from ${downloadURL}`,

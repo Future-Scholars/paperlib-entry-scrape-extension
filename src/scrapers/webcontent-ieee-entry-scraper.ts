@@ -38,7 +38,11 @@ export class WebcontentIEEEEntryScraper extends AbstractEntryScraper {
       return [];
     }
 
-    const cookieJar = new CookieJar();
+    const downloadPDF =
+      (PLExtAPI.extensionPreferenceService.get(
+        "@future-scholars/paperlib-entry-scrape-extension",
+        "download-pdf",
+      ) as boolean);
 
     const root = parse(payload.value.document);
     const metaNodes = root.querySelectorAll("script");
@@ -66,14 +70,15 @@ export class WebcontentIEEEEntryScraper extends AbstractEntryScraper {
         entityDraft.pubTime = publicationYear[1];
       }
 
-      const firstNames = metaStr.matchAll(/"firstName":"(.*?)",/g);
-      const lastNames = metaStr.matchAll(/"lastNames":"(.*?)",/g);
+      const firstName = metaStr.matchAll(/"firstName":"(.*?)",/g);
+      const lastName = metaStr.matchAll(/"lastName":"(.*?)",/g);
+
       let firstNamesList: string[] = [];
       let lastNamesList: string[] = [];
-      for (const match of firstNames) {
+      for (const match of firstName) {
         firstNamesList.push(match[1]);
       }
-      for (const match of lastNames) {
+      for (const match of lastName) {
         lastNamesList.push(match[1]);
       }
       entityDraft.authors = firstNamesList
@@ -81,43 +86,47 @@ export class WebcontentIEEEEntryScraper extends AbstractEntryScraper {
           return `${firstName} ${lastNamesList[index]}`;
         })
         .join(", ");
+      
+      if (downloadPDF) {
+        const pdfPath = metaStr.match(/"pdfPath":"(.*?)",/);
+        const pdfAccessNode = root.querySelector(".pdf-btn-link");
+        if (pdfPath && pdfAccessNode) {
+          const url = `https://ieeexplore.ieee.org${pdfPath[1].replace(
+            "iel7",
+            "ielx7",
+          )}`;
 
-      const pdfPath = metaStr.match(/"pdfPath":"(.*?)",/);
-      const pdfAccessNode = root.querySelector(".pdf-btn-link");
-      if (pdfPath && pdfAccessNode) {
-        const url = `https://ieeexplore.ieee.org${pdfPath[1].replace(
-          "iel7",
-          "ielx7",
-        )}`;
-
-        const cookieJar: any[] = [];
-        for (const cookie of payload.value.cookies) {
-          cookieJar.push({
-            cookieStr: `${cookie.name}=${cookie.value}; domain=${cookie.domain}`,
-            currentUrl: `https://${cookie.domain}/`,
-          });
-        }
-        try {
-          let filename = url.split("/").pop() as string;
-          if (!filename.endsWith(".pdf")) {
-            filename += ".pdf";
+          const cookieJar: any[] = [];
+          for (const cookie of payload.value.cookies) {
+            cookieJar.push({
+              cookieStr: `${cookie.name}=${cookie.value}; domain=${cookie.domain}`,
+              currentUrl: `https://${cookie.domain}/`,
+            });
           }
+          try {
+            let filename = url.split("/").pop() as string;
+            if (!filename.endsWith(".pdf")) {
+              filename += ".pdf";
+            }
 
-          const targetUrl = await PLExtAPI.networkTool.downloadPDFs(
-            [url],
-            cookieJar as any,
-          );
-          if (targetUrl.length > 0) {
-            entityDraft.mainURL = targetUrl[0];
+            const targetUrl = await PLExtAPI.networkTool.downloadPDFs(
+              [url],
+              cookieJar as any,
+            );
+            if (targetUrl.length > 0) {
+              entityDraft.mainURL = targetUrl[0];
+            }
+          } catch (e) {
+            PLAPI.logService.error(
+              "Failed to download PDF from IEEE",
+              e as Error,
+              true,
+              "EntryScrapeExt",
+            );
           }
-        } catch (e) {
-          PLAPI.logService.error(
-            "Failed to download PDF from IEEE",
-            e as Error,
-            true,
-            "EntryScrapeExt",
-          );
         }
+      } else {
+        entityDraft.note = `<md>\n[URL](${payload.value.url})`;
       }
 
       return [entityDraft];
