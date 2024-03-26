@@ -60076,8 +60076,9 @@ async function getPdfManager(arrayBuffer, recoveryMode) {
 		evaluatorOptions: {
 			cMapUrl: null,
 			standardFontDataUrl: null,
+			ignoreErrors: true,
 		},
-		password: "",
+		password: ""
 	};
 	let pdfManager = new LocalPdfManager(pdfManagerArgs);
 	await pdfManager.ensureDoc("checkHeader", []);
