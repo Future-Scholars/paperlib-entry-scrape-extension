@@ -1,8 +1,9 @@
 import { Cite, plugins } from "@citation-js/core";
 import * as plugin from "@citation-js/plugin-bibtex";
+import { PLAPI } from "paperlib-api/api";
 import { PaperEntity } from "paperlib-api/model";
 
-interface BibtexEntity {
+export interface BibtexEntity {
   title: string;
   author: [{ given: string; family: string }];
   issued: {
@@ -23,7 +24,28 @@ export function bibtex2json(bibtex: string): BibtexEntity[] {
     return Cite(bibtex, { forceType: "@bibtex/text" }).data;
   } catch (e) {
     console.error(e);
-    return [];
+    const bibEntriesStr = bibtex.split("@").slice(1).map((s) => ("@" + s).trim());
+    const bibtexes: BibtexEntity[] = [];
+    for (const bibEntryStr of bibEntriesStr) {
+      try {
+        // if there is no cite key in the first line
+        if (bibEntryStr.split("\n")[0].endsWith("{,")) {
+          const citeKey = `citekey${Math.random().toString(36).substring(7)}`;
+          const firstline = bibEntryStr.split("\n")[0].replace("{,", "{" + citeKey + ",");
+          const rest = bibEntryStr.split("\n").slice(1).join("\n");
+          const newBibEntryStr = firstline + "\n" + rest;
+          const bibtex = Cite(newBibEntryStr, { forceType: "@bibtex/text" }).data;
+          bibtexes.push(bibtex[0]);
+        } else {
+          const bibtex = Cite(bibEntryStr, { forceType: "@bibtex/text" }).data;
+          bibtexes.push(bibtex[0]);
+        }
+      } catch (e) {
+        PLAPI.logService.warn("Failed to parse bibtex entry", bibEntryStr, true, "EntryScrapeExt");
+      }
+    }
+
+    return bibtexes;
   }
 }
 

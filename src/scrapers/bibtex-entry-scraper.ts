@@ -1,6 +1,6 @@
 import { readFileSync } from "fs";
 
-import { bibtex2json, bibtex2paperEntityDraft } from "@/utils/bibtex";
+import { bibtex2json, BibtexEntity, bibtex2paperEntityDraft } from "@/utils/bibtex";
 import { PaperEntity } from "paperlib-api/model";
 import { urlUtils } from "paperlib-api/utils";
 
@@ -41,6 +41,7 @@ export class BibTexEntryScraper extends AbstractEntryScraper {
       urlUtils.eraseProtocol(payload.value),
       "utf8",
     );
+
     const bibtexes = bibtex2json(bibtexStr);
     const paperEntityDrafts: PaperEntity[] = [];
     for (const bibtex of bibtexes) {

@@ -121,120 +121,39 @@ export class PDFEntryScraper extends AbstractEntryScraper {
     // Get largest text
     const textData = pages[0][2][0][0][0][4];
 
-    let largestText = "";
-    let largestTextFontSize = 0;
-    let largestTextFontIndex = -1;
-    let secondLargestText = "";
-    let secondLargestTextFontSize = 0;
-    let secondLargestTextFontIndex = -1;
-    let lastTextFontSize = 0;
-    let isSpecialStyleTitle: string | undefined = undefined;
-    let fulltext = "";
-    let textMode = -1;
-    let lastXMax = -1;
-    let lastYMin = -1;
-
-
+    const sentences: {sentence: string, sentenceMaxFontSize: number}[] = [];
     for (const text of textData) {
       const wordList = text[0];
-      for (const word of wordList) {
-        const chars = word[13];
-        if (chars.includes("ICLR")) {
-          isSpecialStyleTitle = "ICLR";
-        }
-        const fontSize = word[4];
-        const spaceAfter = word[5];
-        const rotation = word[7];
-        const fontIndex = word[12]
-        const xMax = word[2];
-        const yMin = word[1];
-
-
-        if (rotation !== 0) {
-          // Skip rotated text
-          continue;
-        }
-
-        if (isSpecialStyleTitle) {
-          if (isSpecialStyleTitle === "ICLR") {
-            if (fontSize === 17.2154) {
-              if (largestTextFontSize !== 17.2154) {
-                largestText = "";
-                largestTextFontSize = 17.2154;
-              }
-              if (chars === "-") {
-                continue;
-              }
-              largestText += `${chars}${" ".repeat(spaceAfter)}`;
-            } else if (fontSize === 13.7723 || fontSize === 0) {
-              if (lastTextFontSize === 13.7723 && chars.startsWith("-")) {
-                largestText += `${chars.splice(0)}${" ".repeat(spaceAfter)}`;
-              } else {
-                largestText += `${chars.toLowerCase()}${" ".repeat(
-                  spaceAfter,
-                )}`;
-              }
-            }
-          }
-        } else {
-          if (fontSize > largestTextFontSize) {
-            secondLargestText = largestText;
-            secondLargestTextFontSize = largestTextFontSize;
-            secondLargestTextFontIndex = largestTextFontIndex;
-            largestText = `${chars}${" ".repeat(spaceAfter)}`;
-            largestTextFontSize = fontSize;
-            largestTextFontIndex = fontIndex;
-          } else if (fontSize === largestTextFontSize) {
-            if (largestTextFontIndex !== fontIndex) {
-              continue
-            }
-
-            if ((textMode === 0 && yMin !== lastYMin) || (textMode === 1 && xMax !== lastXMax)) {
-              // New line
-              largestText = largestText.trimEnd()
-              largestText += " ";
-              textMode = -1;
-            }
-            largestText = largestText + `${chars.trim()}${" ".repeat(spaceAfter)}`;
-          } else if (fontSize > secondLargestTextFontSize) {
-            secondLargestText = `${chars}${" ".repeat(spaceAfter)}`;
-            secondLargestTextFontSize = fontSize;
-            secondLargestTextFontIndex = fontIndex;
-          } else if (fontSize === secondLargestTextFontSize) {
-            if (secondLargestTextFontIndex !== fontIndex) {
-              continue
-            }
-
-            if ((textMode === 0 && yMin !== lastYMin) || (textMode === 1 && xMax !== lastXMax)) {
-              // New line
-              secondLargestText = secondLargestText.trimEnd()
-              secondLargestText += " ";
-              textMode = -1
-            }
-
-            secondLargestText =
-              secondLargestText + `${chars}${" ".repeat(spaceAfter)}`;
-          }
-        }
-
-        lastTextFontSize = fontSize;
-        fulltext += `${chars}${" ".repeat(spaceAfter)}`;
-
-        if (xMax === lastXMax) {
-          textMode = 1;
-        }
-        if (yMin === lastYMin) {
-          textMode = 0;
-        }
-        if (xMax !== lastXMax && yMin !== lastYMin) {
-          textMode = -1;
-        }
-        
-        lastXMax = xMax;
-        lastYMin = yMin;
-      }
-      fulltext += "\n";
+      const sentence = wordList.map((word) => word[13] + " ".repeat(word[5])).join("");
+      const sentenceMaxFontSize = Math.max(...wordList.map((word) => word[4]));
+      sentences.push({ sentence, sentenceMaxFontSize });
     }
+
+    const fulltext = sentences.map((sentence) => sentence.sentence).join("\n");
+    let largestSentences: string[] = []
+    let largestSentenceFontSize: number = -1;
+    let secondLargestSentences: string[] = []
+    let secondLargestSentenceFontSize: number = -1;
+
+    for (const sentence of sentences) {
+      if (sentence.sentenceMaxFontSize > largestSentenceFontSize) {
+        secondLargestSentenceFontSize = largestSentenceFontSize;
+        secondLargestSentences = largestSentences;
+        largestSentenceFontSize = sentence.sentenceMaxFontSize;
+        largestSentences = [sentence.sentence];
+      } else if (sentence.sentenceMaxFontSize === largestSentenceFontSize) {
+        largestSentences.push(sentence.sentence);
+      }
+      else if (sentence.sentenceMaxFontSize > secondLargestSentenceFontSize) {
+        secondLargestSentenceFontSize = sentence.sentenceMaxFontSize;
+        secondLargestSentences = [sentence.sentence];
+      } else if (sentence.sentenceMaxFontSize === secondLargestSentenceFontSize) {
+        secondLargestSentences.push(sentence.sentence);
+      }
+    }    
+
+    const largestText = largestSentences.join(" ");
+    const secondLargestText = secondLargestSentences.join(" ");
 
     // Title
     const lang = franc(largestText);
@@ -243,7 +162,9 @@ export class PDFEntryScraper extends AbstractEntryScraper {
     if (
       largestText.length === 1 ||
       (lang !== "cmn" && lang !== "jpn" && !largestText.includes(" ")) ||
-      largestText.startsWith("arXiv:")
+      largestText.startsWith("arXiv") || 
+      largestText.toLowerCase().startsWith("journal of") ||
+      largestText.toLowerCase().startsWith("proceedings of")
     ) {
       title = secondLargestText.trim();
     } else {
@@ -281,7 +202,7 @@ export class PDFEntryScraper extends AbstractEntryScraper {
     if (dois && dois.length > 0) {
       const doi = stringUtils.formatString({ str: dois[0], removeWhite: true });
       if (doi.endsWith(",") || doi.endsWith(".") || doi.endsWith("/")) {
-        paperEntityDraft.setValue("doi", paperEntityDraft.doi.slice(0, -1));
+        paperEntityDraft.setValue("doi", doi.slice(0, -1));
       } else {
         paperEntityDraft.setValue("doi", doi);
       }
