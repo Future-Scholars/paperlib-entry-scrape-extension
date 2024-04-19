@@ -13,11 +13,13 @@ import { WebcontentGoogleScholarEntryScraper } from "@/scrapers/webcontent-googl
 import { WebcontentIEEEEntryScraper } from "@/scrapers/webcontent-ieee-entry-scraper";
 import { WebcontentPDFURLEntryScraper } from "@/scrapers/webcontent-pdfurl-entry-scraper";
 import { ZoteroCSVEntryScraper } from "@/scrapers/zoterocsv-entry-scraper";
+import { PaperlibCSVEntryScraper } from "@/scrapers/paperlibcsv-entry-scraper";
 
 const SCRAPER_OBJS = new Map<string, typeof AbstractEntryScraper>([
   ["pdf", PDFEntryScraper],
   ["bibtex", BibTexEntryScraper],
   ["paperentity", PaperEntityEntryScraper],
+  ["paperlibcsv", PaperlibCSVEntryScraper],
   ["zoterocsv", ZoteroCSVEntryScraper],
   ["webcontent-arxiv", WebcontentArXivEntryScraper],
   ["webcontent-googlescholar", WebcontentGoogleScholarEntryScraper],
