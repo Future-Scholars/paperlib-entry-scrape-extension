@@ -13,6 +13,9 @@ export interface IWebcontentGoogleScholarEntryScraperPayload {
     url: string;
     document: string;
     cookies: string;
+    options?: {
+      downloadPDF?: boolean;
+    }
   };
 }
 
@@ -38,11 +41,16 @@ export class WebcontentGoogleScholarEntryScraper extends AbstractEntryScraper {
       return [];
     }
 
-    const downloadPDF =
-    (PLExtAPI.extensionPreferenceService.get(
-      "@future-scholars/paperlib-entry-scrape-extension",
-      "download-pdf",
-    ) as boolean);
+    let downloadPDF = true;
+    if (payload.value.options && payload.value.options.downloadPDF !== undefined) {
+      downloadPDF = payload.value.options.downloadPDF;
+    } else {
+      downloadPDF =
+        (PLExtAPI.extensionPreferenceService.get(
+          "@future-scholars/paperlib-entry-scrape-extension",
+          "download-pdf",
+        ) as boolean)
+    }
 
     const paper = parse(payload.value.document);
 
@@ -53,26 +61,27 @@ export class WebcontentGoogleScholarEntryScraper extends AbstractEntryScraper {
       const downloadURL = fileUrlNode?.attributes["href"];
       if (downloadURL) {
         if (downloadPDF) {
-        const downloadedFilePath = await PLExtAPI.networkTool.downloadPDFs([
-          downloadURL,
-        ]);
+          const downloadedFilePath = await PLExtAPI.networkTool.downloadPDFs([
+            downloadURL,
+          ]);
 
-        if (downloadedFilePath) {
-          if (downloadedFilePath.length > 0) {
-            entityDraft = (
-              await PDFEntryScraper.scrape({
-                type: "file",
-                value: downloadedFilePath[0],
-              })
-            )[0];
+          if (downloadedFilePath) {
+            if (downloadedFilePath.length > 0) {
+              entityDraft = (
+                await PDFEntryScraper.scrape({
+                  type: "file",
+                  value: downloadedFilePath[0],
+                })
+              )[0];
 
-            if (entityDraft.title) {
-              return [entityDraft];
-            } else {
-              entityDraft.mainURL = downloadedFilePath[0];
+              if (entityDraft.title) {
+                return [entityDraft];
+              } else {
+                entityDraft.mainURL = downloadedFilePath[0];
+              }
             }
           }
-        }} else {
+        } else {
           entityDraft.note = `<md>\n[PDF](${downloadURL})`;
         }
       }
@@ -98,7 +107,7 @@ export class WebcontentGoogleScholarEntryScraper extends AbstractEntryScraper {
           if (dataid) {
             const citeUrl = `https://scholar.google.com/scholar?q=info:${dataid}:scholar.google.com/&output=cite&scirp=1&hl=en`;
             let citeResponse;
-            try{
+            try {
               const citeResponse = await PLExtAPI.networkTool.get(
                 citeUrl,
                 headers,

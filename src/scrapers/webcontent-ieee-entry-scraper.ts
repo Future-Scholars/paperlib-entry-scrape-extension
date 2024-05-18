@@ -11,6 +11,9 @@ export interface IWebcontentIEEEEntryScraperPayload {
     url: string;
     document: string;
     cookies: { domain: string; name: string; value: string }[];
+    options?: {
+      downloadPDF?: boolean;
+    }
   };
 }
 
@@ -38,11 +41,16 @@ export class WebcontentIEEEEntryScraper extends AbstractEntryScraper {
       return [];
     }
 
-    const downloadPDF =
-      (PLExtAPI.extensionPreferenceService.get(
-        "@future-scholars/paperlib-entry-scrape-extension",
-        "download-pdf",
-      ) as boolean);
+    let downloadPDF = true;
+    if (payload.value.options && payload.value.options.downloadPDF !== undefined) {
+      downloadPDF = payload.value.options.downloadPDF;
+    } else {
+      downloadPDF =
+        (PLExtAPI.extensionPreferenceService.get(
+          "@future-scholars/paperlib-entry-scrape-extension",
+          "download-pdf",
+        ) as boolean)
+    }
 
     const root = parse(payload.value.document);
     const metaNodes = root.querySelectorAll("script");
