@@ -10,10 +10,10 @@ export interface IWebcontentEmbedEntryScraperPayload {
   value: {
     url: string;
     document: string;
-    cookies: string;
+    cookies: { domain: string; name: string; value: string }[];
     options?: {
       downloadPDF?: boolean;
-    }
+    };
   };
 }
 
@@ -77,6 +77,19 @@ export class WebcontentEmbedEntryScraper extends AbstractEntryScraper {
 
       const authors: string[] = [];
 
+      let downloadPDF = true;
+      if (
+        payload.value.options &&
+        payload.value.options.downloadPDF !== undefined
+      ) {
+        downloadPDF = payload.value.options.downloadPDF;
+      } else {
+        downloadPDF = PLExtAPI.extensionPreferenceService.get(
+          "@future-scholars/paperlib-entry-scrape-extension",
+          "download-pdf",
+        ) as boolean;
+      }
+
       for (const meta of metaTags) {
         if (
           meta.getAttribute("name") === "citation_title" ||
@@ -104,36 +117,59 @@ export class WebcontentEmbedEntryScraper extends AbstractEntryScraper {
           meta.getAttribute("name") === "citation_doi" ||
           meta.getAttribute("name") === "dc.Identifier"
         ) {
-          entityDraft.doi = meta.getAttribute("content") || "";
+          if (
+            meta.hasAttribute("scheme") &&
+            meta.getAttribute("scheme") === "publisher-id"
+          ) {
+          } else {
+            entityDraft.doi = meta.getAttribute("content") || "";
+          }
+        }
+
+        let downloadURL: string = "";
+        if (
+          meta.getAttribute("name") === "dc.Identifier" &&
+          payload.value.url.includes("adsabs.harvard.edu")
+        ) {
+          downloadURL = `https://ui.adsabs.harvard.edu${meta.getAttribute(
+            "content",
+          )}`;
         }
         if (
-          meta.getAttribute("name") === "citation_pdf_url" ||
-          meta.getAttribute("name") === "dc.Identifier"
+          meta.getAttribute("name") === "dc.Identifier" &&
+          meta.hasAttribute("scheme") &&
+          meta.getAttribute("scheme") === "doi" &&
+          /\/doi\/((?:abs|abstract|full|figure|ref|citedby|book|epdf|pdf)\/)10.\d{4,9}\/[-._;()\/:A-Za-z0-9]+$/.test(payload.value.url)
         ) {
-          let downloadURL: string;
-          if (payload.value.url.includes("adsabs.harvard.edu")) {
-            downloadURL = `https://ui.adsabs.harvard.edu${meta.getAttribute(
-              "content",
-            )}`;
-          } else {
-            downloadURL = meta.getAttribute("content")!;
-          }
+          const doi = meta.getAttribute("content")!;
+          downloadURL = payload.value.url.replace(
+            /\/doi\/((?:abs|abstract|full|figure|ref|citedby|book|epdf|pdf)\/)10.\d{4,9}\/[-._;()\/:A-Za-z0-9]+$/,
+            `/doi/pdf/${doi}`,
+          );
+        }
 
-          let downloadPDF = true;
-          if (payload.value.options && payload.value.options.downloadPDF !== undefined) {
-            downloadPDF = payload.value.options.downloadPDF;
-          } else {
-            downloadPDF =
-              (PLExtAPI.extensionPreferenceService.get(
-                "@future-scholars/paperlib-entry-scrape-extension",
-                "download-pdf",
-              ) as boolean)
-          }
+        if (meta.getAttribute("name") === "citation_pdf_url") {
+          downloadURL = meta.getAttribute("content")!;
+        }
 
-          if (downloadPDF)  {
-            const downloadedFilePath = await PLExtAPI.networkTool.downloadPDFs([
-              downloadURL,
-            ]);
+        if (
+          downloadPDF &&
+          downloadURL.length > 0 &&
+          downloadURL.startsWith("http")
+        ) {
+          try {
+            const cookieJar: any[] = [];
+            for (const cookie of payload.value.cookies) {
+              cookieJar.push({
+                cookieStr: `${cookie.name}=${cookie.value}; domain=${cookie.domain}`,
+                currentUrl: `https://${cookie.domain}/`,
+              });
+            }
+
+            const downloadedFilePath = await PLExtAPI.networkTool.downloadPDFs(
+              [downloadURL],
+              cookieJar,
+            );
             if (downloadedFilePath.length > 0) {
               const fileContent = readFileSync(downloadedFilePath[0]);
               if (
@@ -143,8 +179,8 @@ export class WebcontentEmbedEntryScraper extends AbstractEntryScraper {
                 entityDraft.mainURL = downloadedFilePath[0];
               }
             }
-          } else {
-            entityDraft.note = `<md>\n[PDF](${downloadURL})`;
+          } catch (e) {
+            console.error(e);
           }
         }
       }

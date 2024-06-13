@@ -1,6 +1,6 @@
 {
   "name": "@future-scholars/paperlib-entry-scrape-extension",
-  "version": "0.0.28",
+  "version": "0.0.29",
   "author": "Paperlib",
   "description": "This extension transforms entry payloads into paper entities for Paperlib.",
   "main": "dist/main.js",
@@ -18,7 +18,7 @@
     "@citation-js/core": "^0.7.1",
     "@citation-js/plugin-bibtex": "^0.7.2",
     "@rollup/plugin-commonjs": "^25.0.7",
-    "@types/node": "16.18.1",
+    "@types/node": "18.16.1",
     "@types/tough-cookie": "^4.0.5",
     "bson-objectid": "^2.0.4",
     "franc": "^6.2.0",
