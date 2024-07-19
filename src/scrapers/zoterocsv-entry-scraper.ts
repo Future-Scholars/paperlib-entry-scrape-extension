@@ -1,8 +1,10 @@
 import fs from "fs";
 
 import { PLAPI } from "paperlib-api/api";
-import { PaperEntity } from "paperlib-api/model";
+import { PaperEntity, PaperTag } from "paperlib-api/model";
 import { urlUtils } from "paperlib-api/utils";
+import { NodeHtmlMarkdown } from 'node-html-markdown'
+
 
 import { AbstractEntryScraper } from "./entry-scraper";
 
@@ -62,6 +64,9 @@ export class ZoteroCSVEntryScraper extends AbstractEntryScraper {
     });
 
     let paperEntityDrafts: PaperEntity[] = [];
+
+    const nhm = new NodeHtmlMarkdown();
+
     for (const value of values) {
       try {
         if (value) {
@@ -92,9 +97,20 @@ export class ZoteroCSVEntryScraper extends AbstractEntryScraper {
             "book",
           ].indexOf(value["Item Type"]);
           paperEntityDraft.pubType = pubType > -1 ? pubType : 2;
-          const attachments = value["File Attachments"].split(";");
-          const mainURL = attachments[0];
-          let supURLs = attachments.slice(1).map((url: string) => url.trim());
+          const attachments = value["File Attachments"].split(";").map((url: string) => url.trim());
+
+          // find PDF file in attachments
+          let mainURL = "";
+          let supURLs: string[] = [];
+
+          for (const attachment of attachments) {
+            if (attachment.endsWith(".pdf") && !mainURL) {
+              mainURL = attachment;
+            } else {
+              supURLs.push(attachment);
+            }
+          }
+
           if (mainURL) {
             if (mainURL.endsWith(".pdf")) {
               paperEntityDraft.mainURL = mainURL;
@@ -109,6 +125,18 @@ export class ZoteroCSVEntryScraper extends AbstractEntryScraper {
           paperEntityDraft.volume = value["Volume"];
           paperEntityDraft.number = value["Issue"];
           paperEntityDraft.publisher = value["Publisher"];
+          const note = nhm.translate(value["Notes"]);
+          if (note) {
+            paperEntityDraft.note = `<md>\n${note}`;
+          }
+
+          const tagsList = [...value["Manual Tags"].split(";").map((tag: string) => tag.trim()), ...value["Automatic Tags"].split(";").map((tag: string) => tag.trim())]
+          const tags = Array.from(new Set<string>(tagsList)).filter((tag: string) => tag.trim());
+          paperEntityDraft.tags = tags.map((tag: string) => {
+            return new PaperTag({
+              name: tag,
+            }, true);
+          })
 
           paperEntityDrafts.push(paperEntityDraft);
         }
