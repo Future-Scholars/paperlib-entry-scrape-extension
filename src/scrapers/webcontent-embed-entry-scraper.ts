@@ -1,6 +1,6 @@
 import { readFileSync } from "fs";
 import parse from "node-html-parser";
-import { PLExtAPI } from "paperlib-api/api";
+import { PLAPI, PLExtAPI } from "paperlib-api/api";
 import { PaperEntity } from "paperlib-api/model";
 
 import { AbstractEntryScraper } from "./entry-scraper";
@@ -69,7 +69,7 @@ export class WebcontentEmbedEntryScraper extends AbstractEntryScraper {
     }
 
     const root = parse(payload.value.document);
-
+    let downloadURL = "";
     const metaTags = root.querySelectorAll("meta");
     if (metaTags.length > 0) {
       const entityDraft = new PaperEntity({}, true);
@@ -115,7 +115,8 @@ export class WebcontentEmbedEntryScraper extends AbstractEntryScraper {
         }
         if (
           meta.getAttribute("name") === "citation_doi" ||
-          meta.getAttribute("name") === "dc.Identifier"
+          meta.getAttribute("name") === "dc.Identifier" ||
+          meta.getAttribute("name") === "publication_doi"
         ) {
           if (
             meta.hasAttribute("scheme") &&
@@ -126,7 +127,6 @@ export class WebcontentEmbedEntryScraper extends AbstractEntryScraper {
           }
         }
 
-        let downloadURL: string = "";
         if (
           meta.getAttribute("name") === "dc.Identifier" &&
           payload.value.url.includes("adsabs.harvard.edu")
@@ -136,52 +136,31 @@ export class WebcontentEmbedEntryScraper extends AbstractEntryScraper {
           )}`;
         }
         if (
-          meta.getAttribute("name") === "dc.Identifier" &&
-          meta.hasAttribute("scheme") &&
-          meta.getAttribute("scheme") === "doi" &&
-          /\/doi\/((?:abs|abstract|full|figure|ref|citedby|book|epdf|pdf)\/)10.\d{4,9}\/[-._;()\/:A-Za-z0-9]+$/.test(payload.value.url)
+          meta.getAttribute("name") === "publication_doi" &&
+          /\/doi\/((?:abs|abstract|full|figure|ref|citedby|book|epdf|pdf)?\/?)10.\d{4,9}\/[-._;()\/:A-Za-z0-9]+$/.test(payload.value.url)
         ) {
           const doi = meta.getAttribute("content")!;
           downloadURL = payload.value.url.replace(
-            /\/doi\/((?:abs|abstract|full|figure|ref|citedby|book|epdf|pdf)\/)10.\d{4,9}\/[-._;()\/:A-Za-z0-9]+$/,
+            /\/doi\/((?:abs|abstract|full|figure|ref|citedby|book|epdf|pdf)?\/?)10.\d{4,9}\/[-._;()\/:A-Za-z0-9]+$/,
+            `/doi/pdf/${doi}`,
+          );
+        }
+
+        if (
+          meta.getAttribute("name") === "dc.Identifier" &&
+          meta.hasAttribute("scheme") &&
+          meta.getAttribute("scheme") === "doi" &&
+          /\/doi\/((?:abs|abstract|full|figure|ref|citedby|book|epdf|pdf)?\/?)10.\d{4,9}\/[-._;()\/:A-Za-z0-9]+$/.test(payload.value.url)
+        ) {
+          const doi = meta.getAttribute("content")!;
+          downloadURL = payload.value.url.replace(
+            /\/doi\/((?:abs|abstract|full|figure|ref|citedby|book|epdf|pdf)?\/?)10.\d{4,9}\/[-._;()\/:A-Za-z0-9]+$/,
             `/doi/pdf/${doi}`,
           );
         }
 
         if (meta.getAttribute("name") === "citation_pdf_url") {
           downloadURL = meta.getAttribute("content")!;
-        }
-
-        if (
-          downloadPDF &&
-          downloadURL.length > 0 &&
-          downloadURL.startsWith("http")
-        ) {
-          try {
-            const cookieJar: any[] = [];
-            for (const cookie of payload.value.cookies) {
-              cookieJar.push({
-                cookieStr: `${cookie.name}=${cookie.value}; domain=${cookie.domain}`,
-                currentUrl: `https://${cookie.domain}/`,
-              });
-            }
-
-            const downloadedFilePath = await PLExtAPI.networkTool.downloadPDFs(
-              [downloadURL],
-              cookieJar,
-            );
-            if (downloadedFilePath.length > 0) {
-              const fileContent = readFileSync(downloadedFilePath[0]);
-              if (
-                fileContent.subarray(0, 5).toString() === "%PDF-" &&
-                fileContent.subarray(-5).toString().includes("EOF")
-              ) {
-                entityDraft.mainURL = downloadedFilePath[0];
-              }
-            }
-          } catch (e) {
-            console.error(e);
-          }
         }
       }
       if (authors.length > 0) {
@@ -191,6 +170,48 @@ export class WebcontentEmbedEntryScraper extends AbstractEntryScraper {
           })
           .join(", ");
       }
+
+      if (
+        downloadPDF &&
+        downloadURL.length > 0 &&
+        downloadURL.startsWith("http")
+      ) {
+        try {
+          const cookieJar: any[] = [];
+          for (const cookie of payload.value.cookies) {
+            cookieJar.push({
+              cookieStr: `${cookie.name}=${cookie.value}; domain=${cookie.domain}`,
+              currentUrl: `https://${cookie.domain}/`,
+            });
+          }
+
+          let downloadedFilePath = "";
+          let downloadedFilePaths = await PLExtAPI.networkTool.downloadPDFs(
+            [downloadURL],
+            cookieJar,
+          );
+          if (downloadedFilePaths.length === 0) {
+            // Try download via browser extension.
+            // @ts-ignore
+            downloadedFilePath = await PLAPI.browserExtensionService.askBrowserExtensionDownload(downloadURL);
+          } else {
+            downloadedFilePath = downloadedFilePaths[0];
+          }
+
+          if (downloadedFilePath) {
+            const fileContent = readFileSync(downloadedFilePath);
+            if (
+              fileContent.subarray(0, 5).toString() === "%PDF-" &&
+              fileContent.subarray(-5).toString().includes("EOF")
+            ) {
+              entityDraft.mainURL = downloadedFilePath;
+            }
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
       if (!matched) {
         return [];
       } else {
