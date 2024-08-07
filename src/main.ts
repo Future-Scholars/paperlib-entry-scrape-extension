@@ -1,4 +1,5 @@
 import { PLAPI, PLExtAPI, PLExtension } from "paperlib-api/api";
+import { PaperEntity } from "paperlib-api/model";
 
 import { EntryScrapeService } from "@/services/entry-scrape-service";
 
@@ -42,6 +43,23 @@ class PaperlibEntryScrapeExtension extends PLExtension {
     this.disposeCallbacks.push(
       PLAPI.hookService.hookTransform("scrapeEntry", this.id, "scrapeEntry"),
     );
+
+    this.disposeCallbacks.push(
+      PLAPI.commandService.on(
+        "@future-scholars/paperlib-entry-scrape-extension:import" as any,
+        (args) => {
+          this._import(args);
+        },
+      ),
+    );
+
+    this.disposeCallbacks.push(
+      PLAPI.commandService.registerExternel({
+        id: `import-from`,
+        description: "Import papers from given DOIs, ArXiv IDs, or Titles (separated by ;).",
+        event: "@future-scholars/paperlib-entry-scrape-extension:import",
+      }),
+    );
   }
 
   async dispose() {
@@ -81,6 +99,43 @@ class PaperlibEntryScrapeExtension extends PLExtension {
       "EntryScrapeExt",
     )
     return paperEntityDrafts;
+  }
+
+  async _import(payloads: {value: string[]}) {
+    const ids = payloads.value[0].split(";").map((id) => id.trim());
+
+    PLAPI.logService.info("Import From", JSON.stringify(ids), false, "EntryScrapeExt");
+
+    const dois: string[] = [];
+    const arxivIds: string[] = [];
+    const titles: string[] = [];
+
+    for (const id of ids) {
+      if (id.match(/^10.\d{4,9}\/[-._;()/:A-Z0-9]+$/i)) {
+        dois.push(id);
+      } else if (id.match(/.*(\d{4}\.\d{4,5}).*/)) {
+        arxivIds.push(id);
+      } else {
+        titles.push(id);
+      }
+    }
+
+    const entities: PaperEntity[] = [];
+
+    for (const doi of dois) {
+      entities.push(new PaperEntity({ doi }));
+    }
+    for (const arxivId of arxivIds) {
+      entities.push(new PaperEntity({ arxiv: arxivId }));
+    }
+    for (const title of titles) {
+      entities.push(new PaperEntity({ title }));
+    }
+
+    const scrapedEntities = await PLAPI.scrapeService.scrape(entities.map(v => {
+      return {"type": "paperEntity", "value": v};
+    }), []);
+    await PLAPI.paperService.update(scrapedEntities);
   }
 }
 
