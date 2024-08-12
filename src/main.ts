@@ -56,7 +56,7 @@ class PaperlibEntryScrapeExtension extends PLExtension {
     this.disposeCallbacks.push(
       PLAPI.commandService.registerExternel({
         id: `import-from`,
-        description: "Import papers from given DOIs, ArXiv IDs, or Titles (separated by ;).",
+        description: "Import papers from given DOIs, ArXiv IDs, Webpage URLs or Titles (separated by ;).",
         event: "@future-scholars/paperlib-entry-scrape-extension:import",
       }),
     );
@@ -109,9 +109,12 @@ class PaperlibEntryScrapeExtension extends PLExtension {
     const dois: string[] = [];
     const arxivIds: string[] = [];
     const titles: string[] = [];
+    const webUrls: string[] = [];
 
     for (const id of ids) {
-      if (id.match(/^10.\d{4,9}\/[-._;()/:A-Z0-9]+$/i)) {
+      if (id.startsWith("http://") || id.startsWith("https://")) {
+        webUrls.push(id);
+      } else if (id.match(/^10.\d{4,9}\/[-._;()/:A-Z0-9]+$/i)) {
         dois.push(id);
       } else if (id.match(/.*(\d{4}\.\d{4,5}).*/)) {
         arxivIds.push(id);
@@ -130,6 +133,31 @@ class PaperlibEntryScrapeExtension extends PLExtension {
     }
     for (const title of titles) {
       entities.push(new PaperEntity({ title }));
+    }
+    const downloadPDF = await PLExtAPI.extensionPreferenceService.get(this.id, "download-pdf");
+
+    for (const webUrl of webUrls) {
+      try {
+        const webPageContent = webUrl.endsWith(".pdf") ? "" : (await PLExtAPI.networkTool.get(webUrl, undefined, 0, 5000, false, true)).body;
+
+        const payload = {
+          type: "webcontent",
+          value: {
+            url: webUrl,
+            document: webPageContent,
+            cookies: "",
+            options: {
+              downloadPDF
+            }
+          },
+        }
+        
+        const paperEntities = await this.scrapeEntry([payload]);
+        entities.push(...paperEntities);
+      } catch (e) {
+        PLAPI.logService.error(`Failed to fetch web page content: ${webUrl}`, e as Error, true, "EntryScrapeExt");
+        continue;
+      }
     }
 
     const scrapedEntities = await PLAPI.scrapeService.scrape(entities.map(v => {
