@@ -52,6 +52,13 @@ export class WebcontentEmbedEntryScraper extends AbstractEntryScraper {
           meta.getAttribute("name") === "dc.Title"
         ) {
           matched = true;
+        }  else if (
+          meta.hasAttribute("name") &&
+          meta.getAttribute("name") === "dc.Identifier" &&
+          meta.hasAttribute("scheme") &&
+          meta.getAttribute("scheme") === "doi"
+        ) {
+          matched = true;
         }
       }
 
@@ -124,6 +131,7 @@ export class WebcontentEmbedEntryScraper extends AbstractEntryScraper {
           ) {
           } else {
             entityDraft.doi = meta.getAttribute("content") || "";
+            matched = true;
           }
         }
 
@@ -140,6 +148,9 @@ export class WebcontentEmbedEntryScraper extends AbstractEntryScraper {
           /\/doi\/((?:abs|abstract|full|figure|ref|citedby|book|epdf|pdf)?\/?)10.\d{4,9}\/[-._;()\/:A-Za-z0-9]+$/.test(payload.value.url)
         ) {
           const doi = meta.getAttribute("content")!;
+          entityDraft.doi = doi;
+          matched = true;
+
           downloadURL = payload.value.url.replace(
             /\/doi\/((?:abs|abstract|full|figure|ref|citedby|book|epdf|pdf)?\/?)10.\d{4,9}\/[-._;()\/:A-Za-z0-9]+$/,
             `/doi/pdf/${doi}`,
@@ -153,6 +164,9 @@ export class WebcontentEmbedEntryScraper extends AbstractEntryScraper {
           /\/doi\/((?:abs|abstract|full|figure|ref|citedby|book|epdf|pdf)?\/?)10.\d{4,9}\/[-._;()\/:A-Za-z0-9]+$/.test(payload.value.url)
         ) {
           const doi = meta.getAttribute("content")!;
+          entityDraft.doi = doi;
+          matched = true;
+
           downloadURL = payload.value.url.replace(
             /\/doi\/((?:abs|abstract|full|figure|ref|citedby|book|epdf|pdf)?\/?)10.\d{4,9}\/[-._;()\/:A-Za-z0-9]+$/,
             `/doi/pdf/${doi}`,

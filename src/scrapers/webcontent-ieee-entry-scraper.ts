@@ -1,7 +1,6 @@
 import parse from "node-html-parser";
 import { PLAPI, PLExtAPI } from "paperlib-api/api";
 import { PaperEntity } from "paperlib-api/model";
-import { CookieJar } from "tough-cookie";
 
 import { AbstractEntryScraper } from "./entry-scraper";
 
@@ -18,7 +17,6 @@ export interface IWebcontentIEEEEntryScraperPayload {
 }
 
 export class WebcontentIEEEEntryScraper extends AbstractEntryScraper {
-  // TODO: test this one
   static validPayload(payload: any) {
     if (
       !payload.hasOwnProperty("type") ||
@@ -30,8 +28,7 @@ export class WebcontentIEEEEntryScraper extends AbstractEntryScraper {
     ) {
       return false;
     }
-    const urlRegExp = new RegExp("^https?://ieeexplore.ieee.org/document");
-    return urlRegExp.test(payload.value.url);
+    return /^https?:\/\/ieeexplore\.ieee\.org\/(?:abstract\/)?document/.test(payload.value.url);
   }
 
   static async scrape(

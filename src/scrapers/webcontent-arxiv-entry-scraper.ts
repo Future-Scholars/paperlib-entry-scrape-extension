@@ -86,7 +86,12 @@ export class WebcontentArXivEntryScraper extends AbstractEntryScraper {
 
       return entities;
     } else {
-      return [];
+      return [
+        new PaperEntity({
+          title: "",
+          arxiv: arXivID,
+        }),
+      ];
     }
   }
 }

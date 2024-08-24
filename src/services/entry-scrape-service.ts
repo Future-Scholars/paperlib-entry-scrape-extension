@@ -12,6 +12,7 @@ import { WebcontentEmbedEntryScraper } from "@/scrapers/webcontent-embed-entry-s
 import { WebcontentGoogleScholarEntryScraper } from "@/scrapers/webcontent-googlescholar-entry-scraper";
 import { WebcontentIEEEEntryScraper } from "@/scrapers/webcontent-ieee-entry-scraper";
 import { WebcontentPDFURLEntryScraper } from "@/scrapers/webcontent-pdfurl-entry-scraper";
+import { WebcontentACMEntryScraper } from "@/scrapers/webcontent-acm-entry-scraper";
 import { ZoteroCSVEntryScraper } from "@/scrapers/zoterocsv-entry-scraper";
 import { PaperlibCSVEntryScraper } from "@/scrapers/paperlibcsv-entry-scraper";
 
@@ -24,6 +25,7 @@ const SCRAPER_OBJS = new Map<string, typeof AbstractEntryScraper>([
   ["webcontent-arxiv", WebcontentArXivEntryScraper],
   ["webcontent-googlescholar", WebcontentGoogleScholarEntryScraper],
   ["webcontent-ieee", WebcontentIEEEEntryScraper],
+  ["webcontent-acm", WebcontentACMEntryScraper],
   ["webcontent-cnki", WebcontentCNKIEntryScraper],
 ]);
 
