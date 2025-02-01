@@ -94,8 +94,9 @@ export class WebcontentIEEEEntryScraper extends AbstractEntryScraper {
       
       if (downloadPDF) {
         const pdfPath = metaStr.match(/"pdfPath":"(.*?)",/);
-        const pdfAccessNode = root.querySelector(".pdf-btn-link");
-        if (pdfPath && pdfAccessNode) {
+        const pdfAccessNode1 = root.querySelector(".pdf-btn-link");
+        const pdfAccessNode2 = root.querySelector(".xpl-btn-pdf");
+        if (pdfPath && (pdfAccessNode1 || pdfAccessNode2)) {
           const url = `https://ieeexplore.ieee.org${pdfPath[1].replace(
             "iel7",
             "ielx7",
@@ -113,11 +114,13 @@ export class WebcontentIEEEEntryScraper extends AbstractEntryScraper {
             if (!filename.endsWith(".pdf")) {
               filename += ".pdf";
             }
-
+            
+            PLAPI.logService.info(url)
             const targetUrl = await PLExtAPI.networkTool.downloadPDFs(
               [url],
               cookieJar as any,
             );
+            PLAPI.logService.info(JSON.stringify(targetUrl))
             if (targetUrl.length > 0) {
               entityDraft.mainURL = targetUrl[0];
             }
