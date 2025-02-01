@@ -115,12 +115,10 @@ export class WebcontentIEEEEntryScraper extends AbstractEntryScraper {
               filename += ".pdf";
             }
             
-            PLAPI.logService.info(url)
             const targetUrl = await PLExtAPI.networkTool.downloadPDFs(
               [url],
               cookieJar as any,
             );
-            PLAPI.logService.info(JSON.stringify(targetUrl))
             if (targetUrl.length > 0) {
               entityDraft.mainURL = targetUrl[0];
             }
