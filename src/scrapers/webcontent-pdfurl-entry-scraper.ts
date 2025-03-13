@@ -24,6 +24,10 @@ export class WebcontentPDFURLEntryScraper extends AbstractEntryScraper {
       return false;
     }
     const urlRegExp = new RegExp(".*.pdf$");
+    // Special case for openreview.net (openreview.net/pdf?id=...)
+    if (payload.value.url.includes("openreview.net/pdf?id=")) {
+      return true;
+    }
     return urlRegExp.test(payload.value.url);
   }
 
