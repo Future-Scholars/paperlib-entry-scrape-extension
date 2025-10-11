@@ -1,6 +1,6 @@
 {
   "name": "@future-scholars/paperlib-entry-scrape-extension",
-  "version": "0.0.34",
+  "version": "0.0.36",
   "author": "Paperlib",
   "description": "This extension transforms entry payloads into paper entities for Paperlib.",
   "main": "dist/main.js",
